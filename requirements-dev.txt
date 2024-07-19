@@ -4,3 +4,4 @@
 
 ruff~=0.5.0
 pre-commit~=3.7.1
+discord-py-interactions~=5.13.1
