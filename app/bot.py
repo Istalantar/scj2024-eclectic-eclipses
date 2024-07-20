@@ -1,5 +1,5 @@
 from features.calculator import ALLOWED_CONSTANTS, CalculationError, evaluate_expression
-from interactions import Client, Intents, OptionType, SlashCommandOption, SlashContext, listen, slash_command
+from interactions import Client, Embed, Intents, OptionType, SlashCommandOption, SlashContext, listen, slash_command
 
 bot = Client(intents=Intents.DEFAULT)
 # intents are what events we want to receive from discord, `DEFAULT` is usually fine
@@ -102,17 +102,18 @@ async def info_function(ctx: SlashContext) -> None:
         "`//` (floor division)",
     ]
 
-    info_message = (
-        "**Allowed Functions:**\n"
-        + "\n".join(functions_info)
-        + "\n\n**Allowed Constants:**\n"
-        + constants_list
-        + "\n\n**Allowed Operators:**\n"
-        + "\n".join(operators_info)
-        + "\n\n**Note:** Complex numbers are not supported.\n\n"
+    embed = Embed(
+        title="Calculator Information",
+        description="Here is the list of allowed functions, constants, and operators for the calculator.",
+        color=0x1E1F22,  # Green color
     )
 
-    await ctx.send(info_message, ephemeral=True)
+    embed.add_field(name="Allowed Functions", value="\n".join(functions_info), inline=False)
+    embed.add_field(name="Allowed Constants", value=constants_list, inline=False)
+    embed.add_field(name="Allowed Operators", value="\n".join(operators_info), inline=False)
+    embed.set_footer(text="Note: Complex numbers are not supported.")
+
+    await ctx.send(embeds=[embed], ephemeral=True)
 
 
 bot.start("Your token goes here")
