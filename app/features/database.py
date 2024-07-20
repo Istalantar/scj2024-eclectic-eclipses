@@ -62,15 +62,26 @@ class Database(Extension):
                 return False
         return True
 
+    async def todo_remove_category(self, user_id: int, category: str) -> bool:
+        """Remove an entire category of items from the to-do table."""
+        query = """DELETE from todo WHERE user_id = ? AND category = ?"""
+        async with self.bot.db_conn.cursor() as cursor:
+            try:
+                await cursor.execute(query, (user_id, category))
+                await self.bot.db_conn.commit()
+            except aiosqlite.OperationalError:
+                return False
+        return True
+
     async def todo_listall(self, user_id: int, category: str | None = None) -> list[tuple[str]]:
-        """Fetch all the users items from the db."""
+        """Fetch all the users items from the to-do table."""
         async with self.bot.db_conn.cursor() as cursor:
             query = """SELECT item FROM todo WHERE user_id = ? AND category = ?"""
             response = await cursor.execute(query, (user_id, category))
             return response.fetchall()
 
     async def todo_get_item(self, user_id: int, item_id: int) -> tuple[str]:
-        """Fetch individual item from db."""
+        """Fetch individual item from to-do table."""
         async with self.bot.db_conn.cursor() as cursor:
             query = """SELECT * from todo WHERE user_id = ? AND item_id = ?"""
             response = await cursor.execute(query, (user_id, item_id))
