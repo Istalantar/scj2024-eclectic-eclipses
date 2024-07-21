@@ -126,7 +126,7 @@ class Alarm(interactions.Extension):
         ctx: interactions.SlashContext,
         timezone: str,
     ) -> None:
-        """Set timezone based on user selection."""
+        """Set timezone based on user autocomplete selection (e.g., Europe/London, America/Los_Angeles)."""
         self.tz.add_user(ctx.member, timezone)
         await ctx.send(f"timezone set to {timezone}")
 
