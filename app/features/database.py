@@ -76,7 +76,10 @@ class Database(Extension):
     async def todo_listall(self, user_id: int, category: str | None = None) -> list[tuple[str]]:
         """Fetch all the users items from the to-do table."""
         async with self.bot.db_conn.cursor() as cursor:
-            query = """SELECT item FROM todo WHERE user_id = ? AND category = ?"""
+            if category:
+                query = """SELECT item FROM todo WHERE user_id = ? AND category = ?"""
+            else:
+                query = """SELECT item FROM todo WHERE user_id = ? AND category is NULL"""
             response = await cursor.execute(query, (user_id, category))
             return await response.fetchall()
 
