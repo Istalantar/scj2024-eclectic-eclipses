@@ -78,11 +78,11 @@ class Database(Extension):
         async with self.bot.db_conn.cursor() as cursor:
             query = """SELECT item FROM todo WHERE user_id = ? AND category = ?"""
             response = await cursor.execute(query, (user_id, category))
-            return response.fetchall()
+            return await response.fetchall()
 
     async def todo_get_item(self, user_id: int, item_id: int) -> tuple[str]:
         """Fetch individual item from to-do table."""
         async with self.bot.db_conn.cursor() as cursor:
             query = """SELECT * from todo WHERE user_id = ? AND item_id = ?"""
             response = await cursor.execute(query, (user_id, item_id))
-            return response.fetchone()
+            return await response.fetchone()
