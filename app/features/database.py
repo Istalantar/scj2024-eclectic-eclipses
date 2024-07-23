@@ -78,9 +78,10 @@ class Database(Extension):
         async with self.bot.db_conn.cursor() as cursor:
             if category:
                 query = """SELECT item FROM todo WHERE user_id = ? AND category = ?"""
+                response = await cursor.execute(query, (user_id, category))
             else:
                 query = """SELECT item FROM todo WHERE user_id = ? AND category is NULL"""
-            response = await cursor.execute(query, (user_id, category))
+                response = await cursor.execute(query, (user_id,))
             return await response.fetchall()
 
     async def todo_get_item(self, user_id: int, item_id: int) -> tuple[str]:
