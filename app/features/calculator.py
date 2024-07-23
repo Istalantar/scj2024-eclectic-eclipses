@@ -1,4 +1,5 @@
 import ast
+import decimal
 import math
 import operator
 import re
@@ -195,7 +196,7 @@ def preprocess_expression(expression: str) -> str:
         The preprocessed expression.
 
     """
-    expression = expression.replace("^", "**")
+    expression = expression.replace("^", "**").replace(",", ".")
     expression = re.sub(r"fact\(", "factorial(", expression)
     expression = re.sub(r"(\d+)!", r"factorial(\1)", expression)
 
@@ -274,6 +275,18 @@ def evaluate_expression(expression: str) -> float:
         raise CalculationError(error_message) from error
 
 
+def count_decimal_places(number: float) -> int:
+    """Count the number of decimal places in a float."""
+    decimal_number = decimal.Decimal(str(number))
+    return max(0, -decimal_number.as_tuple().exponent)
+
+
+def adjust_precision_for_multiplication(result: float, operands: list[float]) -> float:
+    """Adjust the precision of the result based on the operands for multiplication."""
+    total_decimal_places = sum(count_decimal_places(op) for op in operands)
+    return round(result, total_decimal_places)
+
+
 def evaluate_binary_operation(node: ast.BinOp) -> float:
     """Evaluate binary operations in the AST.
 
@@ -294,7 +307,10 @@ def evaluate_binary_operation(node: ast.BinOp) -> float:
     right = evaluate_node(node.right)
     operator_type = type(node.op)
     if operator_type in ALLOWED_OPERATORS:
-        return ALLOWED_OPERATORS[operator_type](left, right)
+        result = ALLOWED_OPERATORS[operator_type](left, right)
+        if operator_type == ast.Mult:
+            return adjust_precision_for_multiplication(result, [left, right])
+        return result
     error_message = "Operator not allowed."
     raise CalculationError(error_message)
 
