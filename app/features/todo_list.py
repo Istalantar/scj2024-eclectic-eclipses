@@ -33,6 +33,8 @@ class TodoList(Extension):
         await self.bot.db.todo_add(user_id=user_id, item=todo)
 
     async def _remove_todo(self, user_id: int, todo: str) -> str:
+        start = todo.find(".") + 1
+        todo = todo[start:].strip()
         _, _, _, todo_item = await self.bot.db.todo_get_item(user_id=user_id, item=todo)
         await self.bot.db.todo_remove(user_id=user_id, item=todo)
         return todo_item
@@ -98,7 +100,8 @@ class TodoList(Extension):
             if "`" in temp_todo:
                 todo_number = i
                 todo = temp_todo.replace("`", "")
-                todo = todo[todo.find(".") + 1 :].strip()
+                start = todo.find(".") + 1
+                todo = todo[start:].strip()
                 break
 
         await self.bot.db.todo_remove(user_id=user_id, item=todo)
