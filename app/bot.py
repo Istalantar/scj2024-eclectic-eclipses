@@ -31,4 +31,5 @@ if __name__ == "__main__":
                 token = line.split("=")[1].strip()
 
     bot.load_extension("features.todo_list")
+    bot.load_extension("features.database")
     bot.start(token)
