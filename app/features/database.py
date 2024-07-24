@@ -37,26 +37,29 @@ class Database(Extension):
         async with self.bot.db_conn.cursor() as cursor:
             await cursor.execute("""
             CREATE TABLE IF NOT EXISTS
-            todo (item_id INTEGER PRIMARY KEY AUTOINCREMENT,
+            todo (item TEXT PRIMARY KEY,
             user_id INTEGER NOT NULL,
-            category TEXT NULL,
-            item TEXT NOT NULL)
+            category TEXT NULL)
             """)
         await self.bot.db_conn.commit()
 
-    async def todo_add(self, user_id: int, item: str, category: str | None = None) -> None:
+    async def todo_add(self, user_id: int, item: str, category: str | None = None) -> bool:
         """Add item to to-do table."""
         async with self.bot.db_conn.cursor() as cursor:
             query = """INSERT INTO todo (user_id, category, item) VALUES (?,?,?)"""
-            await cursor.execute(query, (user_id, category, item))
+            try:
+                await cursor.execute(query, (user_id, category, item))
+            except aiosqlite.IntegrityError:
+                return False
         await self.bot.db_conn.commit()
+        return True
 
-    async def todo_remove(self, user_id: int, item_id: int) -> bool:
+    async def todo_remove(self, user_id: int, item: str) -> bool:
         """Remove item from to-do table."""
         async with self.bot.db_conn.cursor() as cursor:
-            query = """DELETE from todo WHERE item_id = ? AND user_id = ?"""
+            query = """DELETE from todo WHERE item = ? AND user_id = ?"""
             try:
-                await cursor.execute(query, (item_id, user_id))
+                await cursor.execute(query, (item, user_id))
                 await self.bot.db_conn.commit()
             except aiosqlite.OperationalError:
                 return False
@@ -84,9 +87,9 @@ class Database(Extension):
                 response = await cursor.execute(query, (user_id,))
             return await response.fetchall()
 
-    async def todo_get_item(self, user_id: int, item_id: int) -> tuple[str]:
+    async def todo_get_item(self, user_id: int, item: str) -> tuple[str]:
         """Fetch individual item from to-do table."""
         async with self.bot.db_conn.cursor() as cursor:
-            query = """SELECT * from todo WHERE user_id = ? AND item_id = ?"""
-            response = await cursor.execute(query, (user_id, item_id))
+            query = """SELECT * from todo WHERE user_id = ? AND item = ?"""
+            response = await cursor.execute(query, (user_id, item))
             return await response.fetchone()
