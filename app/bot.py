@@ -26,4 +26,5 @@ async def hello_function(ctx: SlashContext) -> None:
     await ctx.send("Hello world")
 
 
+bot.load_extension("features.database")
 bot.start("Your token goes here")
