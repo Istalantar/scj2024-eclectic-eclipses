@@ -32,9 +32,9 @@ class TodoList(Extension):
     async def _add_todo(self, user_id: int, todo: str) -> None:
         await self.bot.db.todo_add(user_id=user_id, item=todo)
 
-    async def _remove_todo(self, user_id: int, todo_number: int) -> str:
-        _, _, _, todo_item = await self.bot.db.todo_get_item(user_id=user_id, item_id=todo_number)
-        await self.bot.db.todo_remove(user_id=user_id, item_id=todo_number)
+    async def _remove_todo(self, user_id: int, todo: str) -> str:
+        _, _, _, todo_item = await self.bot.db.todo_get_item(user_id=user_id, item=todo)
+        await self.bot.db.todo_remove(user_id=user_id, item=todo)
         return todo_item
 
     @staticmethod
@@ -93,12 +93,15 @@ class TodoList(Extension):
     async def _gui_remove(self, user_id: int, todo_list: list[str]) -> list[str]:
         """Remove the highlighted todo and highlight the next todo."""
         todo_number = -1
-        for i, todo in enumerate(todo_list):
-            if "`" in todo:
+        todo = ""
+        for i, temp_todo in enumerate(todo_list):
+            if "`" in temp_todo:
                 todo_number = i
+                todo = temp_todo.replace("`", "")
+                todo = todo[todo.find(".") + 1 :].strip()
                 break
 
-        await self.bot.db.todo_remove(user_id=user_id, item_id=todo_number + 1)
+        await self.bot.db.todo_remove(user_id=user_id, item=todo)
         todo_list = await self._get_todo_list(user_id=user_id)
         # highlight the next todo in the list, which took the position of the removed todo,
         # if the last todo was removed, highlight the last todo in the list
@@ -130,7 +133,9 @@ class TodoList(Extension):
     )
     async def todo_remove(self, ctx: SlashContext, todo_id: int) -> None:
         """Remove a todo."""
-        ret = await self._remove_todo(ctx.author.id, todo_id)
+        todo_list = await self._get_todo_list(user_id=ctx.author.id)
+        todo = todo_list[todo_id - 1]
+        ret = await self._remove_todo(ctx.author.id, todo)
         await ctx.send(f"You removed ``{ret}`` from your todo list.", ephemeral=True)
 
     @message_context_menu(name="add to todo")
