@@ -49,6 +49,8 @@ ignore = [
     "D415",
     # Docstring quotes.
     "D301",
+    # Single-line implicit string.
+    "ISC001",
     # Builtins.
     "A",
     # Print statements.
