@@ -1,30 +1,35 @@
-from interactions import Client, Intents, SlashContext, listen, slash_command
+import sys
+from pathlib import Path
+
+from interactions import (
+    Client,
+    Intents,
+    listen,
+)
+from interactions.api.events import Ready
 
 bot = Client(intents=Intents.DEFAULT)
-# intents are what events we want to receive from discord, `DEFAULT` is usually fine
 
 
-@listen()  # this decorator tells snek that it needs to listen for the corresponding event, and run this coroutine
+@listen(Ready)
 async def on_ready() -> None:
     """Doc string here."""
-    # This event is called when the bot is ready to respond to commands
     print("Ready")
     print(f"This bot is owned by {bot.owner}")
 
 
-@listen()
-async def on_message_create(event) -> None:  # noqa: ANN001
-    """Doc string here."""
-    # This event is called when a message is sent in a channel the bot can see
-    print(f"message received: {event.message.jump_url}")
+if __name__ == "__main__":
+    env_path = Path(".env")
+    if not Path.exists(env_path):
+        print("No .env file for the token found")
+        sys.exit(1)
 
+    token = ""
+    with Path.open(env_path) as f:
+        for line in f:
+            if line.startswith("TOKEN"):
+                token = line.split("=")[1].strip()
 
-@slash_command(name="hello", description="Hello world")
-async def hello_function(ctx: SlashContext) -> None:
-    """Doc string here."""
-    await ctx.defer()
-    await ctx.send("Hello world")
-
-
-bot.load_extension("features.database")
-bot.start("Your token goes here")
+    bot.load_extension("features.todo_list")
+    bot.load_extension("features.database")
+    bot.start(token)
