@@ -801,7 +801,6 @@ class Calculator(interactions.Extension):
         commands_info = [
             "`/calc_help` - Get a list of available calculator commands",
             "`/calc_info` - Get information about the calculator",
-            "`/calculator` - Open the interactive calculator",
         ]
 
         commands_calc = [
