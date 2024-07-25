@@ -795,6 +795,44 @@ class Calculator(interactions.Extension):
 
         await ctx.send(embeds=[embed], ephemeral=True)
 
+    @interactions.slash_command(name="calc_help", description="Get a list of available calculator commands")
+    async def calc_help(self, ctx: interactions.SlashContext) -> None:
+        """Provide a list of available calculator commands."""
+        commands_info = [
+            "`/calc_help` - Get a list of available calculator commands",
+            "`/calc_info` - Get information about the calculator",
+            "`/calculator` - Open the interactive calculator",
+        ]
+
+        commands_calc = [
+            "`/calculate expression [expression]` - Calculate a mathematical expression",
+            "`/calc sqrt [x]` - Calculate the square root of x",
+            "`/calc root [x] [n]` - Calculate the nth root of x",
+            "`/calc ln [x]` - Calculate the natural logarithm of x",
+            "`/calc log [x] [base]` - Calculate the logarithm of x with a specified base",
+            "`/calc exp [x]` - Calculate the exponential of x",
+            "`/calc fact [x]` - Calculate the factorial of x",
+            "`/calc abs [x]` - Calculate the absolute value of x",
+            "`/calc round [x]` - Round x to the nearest integer",
+            "`/calc ceil [x]` - Round x up to the nearest integer",
+            "`/calc floor [x]` - Round x down to the nearest integer",
+            "`/calc_trig basic [function] [angle]` - Calculate basic trigonometric functions",
+            "`/calc_trig inverse [function] [value]` - Calculate inverse trigonometric functions",
+            "`/calc_trig hyperbolic [function] [value]` - Calculate hyperbolic trigonometric functions",
+            "`/calc_trig other [function] [angle]` - Calculate other trigonometric functions",
+        ]
+
+        embed = interactions.Embed(
+            title="Calculator Commands",
+            description="Here is the list of available calculator commands.",
+            color=0x1E1F22,
+        )
+
+        embed.add_field(name="Info commands", value="\n".join(commands_info), inline=False)
+        embed.add_field(name="Calculate commands", value="\n".join(commands_calc), inline=False)
+
+        await ctx.send(embeds=[embed], ephemeral=True)
+
 
 def setup(bot: interactions.Client) -> None:
     """Set up the Calculator extension."""
