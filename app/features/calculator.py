@@ -1,3 +1,12 @@
+"""Module providing functions to evaluate mathematical expressions.
+
+It supports various mathematical operations, functions, and constants,
+allowing for complex calculations to be performed on user-provided expressions.
+
+This module also includes a Calculator extension for a Discord bot,
+enabling users to perform calculations directly within Discord.
+"""
+
 import ast
 import decimal
 import math
@@ -150,10 +159,13 @@ ALLOWED_OPERATORS = {
 }
 
 ALLOWED_FUNCTIONS = {
+    "sqrt": math.sqrt,
     "root": calculate_root,
-    "log": calculate_logarithm,
     "ln": math.log,
+    "log": calculate_logarithm,
     "exp": calculate_exponential,
+    "fact": calculate_factorial,
+    "factorial": calculate_factorial,
     "sin": math.sin,
     "cos": math.cos,
     "tan": math.tan,
@@ -166,21 +178,18 @@ ALLOWED_FUNCTIONS = {
     "asinh": math.asinh,
     "acosh": math.acosh,
     "atanh": math.atanh,
-    "abs": abs,
-    "factorial": calculate_factorial,
-    "fact": calculate_factorial,
-    "round": round,
-    "ceil": math.ceil,
-    "floor": math.floor,
     "sec": calculate_secant,
     "csc": calculate_cosecant,
     "cot": calculate_cotangent,
-    "sqrt": math.sqrt,
+    "abs": abs,
+    "round": round,
+    "ceil": math.ceil,
+    "floor": math.floor,
 }
 
 ALLOWED_CONSTANTS = {
-    "pi": math.pi,
-    "e": math.e,
+    "PI": math.pi,
+    "E": math.e,
 }
 
 
@@ -199,15 +208,11 @@ def preprocess_expression(expression: str) -> str:
     expression = expression.replace("^", "**").replace(",", ".")
     expression = re.sub(r"fact\(", "factorial(", expression)
     expression = re.sub(r"(\d+)!", r"factorial(\1)", expression)
-
     expression = re.sub(r"(\d)(\()", r"\1*\2", expression)
     expression = re.sub(r"(\))(\d)", r"\1*\2", expression)
-
     constant_pattern = r"|".join(re.escape(const) for const in ALLOWED_CONSTANTS)
-
     expression = re.sub(rf"(\d)({constant_pattern})", r"\1*\2", expression)
     expression = re.sub(rf"({constant_pattern})(\d)", r"\1*\2", expression)
-
     expression = re.sub(rf"(\))({constant_pattern})", r"\1*\2", expression)
     return re.sub(rf"({constant_pattern})(\()", r"\1*\2", expression)
 
@@ -242,6 +247,11 @@ def check_for_complex_numbers(expression: str) -> None:
             ):
                 error_message = "Complex numbers are not supported."
                 raise CalculationError(error_message)
+
+
+def is_close_to_zero(value: float, tolerance: float = 1e-10) -> bool:
+    """Check if a value is close to zero within a given tolerance."""
+    return abs(value) < tolerance
 
 
 def evaluate_expression(expression: str) -> float:
@@ -380,22 +390,25 @@ def evaluate_node(node: ast.BinOp | ast.UnaryOp | ast.Constant | ast.Name | ast.
 
     """
     if isinstance(node, ast.BinOp):
-        return evaluate_binary_operation(node)
-    if isinstance(node, ast.UnaryOp):
-        return evaluate_unary_operation(node)
-    if isinstance(node, ast.Constant):
-        return node.value
-    if isinstance(node, ast.Name):
+        result = evaluate_binary_operation(node)
+    elif isinstance(node, ast.UnaryOp):
+        result = evaluate_unary_operation(node)
+    elif isinstance(node, ast.Constant):
+        result = node.value
+    elif isinstance(node, ast.Name):
         if node.id in ALLOWED_CONSTANTS:
-            return ALLOWED_CONSTANTS[node.id]
-        error_message = f"Constant not allowed or syntax error: {node.id}"
+            result = ALLOWED_CONSTANTS[node.id]
+        else:
+            error_message = f"Constant not allowed or syntax error: {node.id}"
+            raise CalculationError(error_message)
+    elif isinstance(node, ast.Call):
+        result = evaluate_function_call(node)
+    elif isinstance(node, ast.Expression):
+        result = evaluate_node(node.body)
+    else:
+        error_message = "Unsupported node type"
         raise CalculationError(error_message)
-    if isinstance(node, ast.Call):
-        return evaluate_function_call(node)
-    if isinstance(node, ast.Expression):
-        return evaluate_node(node.body)
-    error_message = "Unsupported node type"
-    raise CalculationError(error_message)
+    return 0.0 if is_close_to_zero(result) else result
 
 
 class Calculator(interactions.Extension):
@@ -433,6 +446,304 @@ class Calculator(interactions.Extension):
         except UnexpectedCalculationError as unexpected_error:
             await ctx.send(f"An unexpected error occurred: {unexpected_error}", ephemeral=True)
 
+    @interactions.slash_command(name="calc", description="Calculator functions")
+    async def calc(self, ctx: interactions.SlashContext) -> None:
+        """Provide base command for calculator functions."""
+
+    @calc.subcommand(sub_cmd_name="sqrt", sub_cmd_description="Calculate the square root")
+    @interactions.slash_option(
+        name="number",
+        description="Number to calculate the square root of",
+        required=True,
+        opt_type=interactions.OptionType.STRING,
+    )
+    async def calc_sqrt(self, ctx: interactions.SlashContext, number: str) -> None:
+        """Calculate the square root of a number."""
+        try:
+            result = evaluate_expression(number)
+            await ctx.send(f"The square root of {number} is: {result}")
+        except (CalculationError, ValueError, TypeError) as e:
+            await ctx.send(f"An error occurred: {e!s}", ephemeral=True)
+
+    @calc.subcommand(sub_cmd_name="root", sub_cmd_description="Calculate the nth root of a number")
+    @interactions.slash_option(
+        name="x",
+        description="The number to find the root of",
+        required=True,
+        opt_type=interactions.OptionType.STRING,
+    )
+    @interactions.slash_option(
+        name="n",
+        description="The root exponent",
+        required=True,
+        opt_type=interactions.OptionType.STRING,
+    )
+    async def calc_root(self, ctx: interactions.SlashContext, x: str, n: str) -> None:
+        """Calculate the nth root of a number."""
+        try:
+            expression = f"root({x}, {n})"
+            result = evaluate_expression(expression)
+            await ctx.send(f"The {n}th root of {x} is: {result}")
+        except (CalculationError, ValueError, TypeError) as e:
+            await ctx.send(f"An error occurred: {e!s}", ephemeral=True)
+
+    @calc.subcommand(sub_cmd_name="ln", sub_cmd_description="Calculate the natural logarithm")
+    @interactions.slash_option(
+        name="x",
+        description="The number to calculate the natural logarithm of",
+        required=True,
+        opt_type=interactions.OptionType.STRING,
+    )
+    async def calc_ln(self, ctx: interactions.SlashContext, x: str) -> None:
+        """Calculate the natural logarithm of a number."""
+        try:
+            expression = f"ln({x})"
+            result = evaluate_expression(expression)
+            await ctx.send(f"The natural logarithm of {x} is: {result}")
+        except (CalculationError, ValueError, TypeError) as e:
+            await ctx.send(f"An error occurred: {e!s}", ephemeral=True)
+
+    @calc.subcommand(sub_cmd_name="log", sub_cmd_description="Calculate the logarithm with a specified base")
+    @interactions.slash_option(
+        name="x",
+        description="The number to calculate the logarithm of",
+        required=True,
+        opt_type=interactions.OptionType.STRING,
+    )
+    @interactions.slash_option(
+        name="base",
+        description="The base of the logarithm (default is 10)",
+        required=False,
+        opt_type=interactions.OptionType.STRING,
+    )
+    async def calc_log(self, ctx: interactions.SlashContext, x: str, base: str = "10") -> None:
+        """Calculate the logarithm of a number with a specified base."""
+        try:
+            expression = f"log({x}, {base})"
+            result = evaluate_expression(expression)
+            await ctx.send(f"The logarithm of {x} with base {base} is: {result}")
+        except (CalculationError, ValueError, TypeError) as e:
+            await ctx.send(f"An error occurred: {e!s}", ephemeral=True)
+
+    @calc.subcommand(sub_cmd_name="exp", sub_cmd_description="Calculate the exponential of a number")
+    @interactions.slash_option(
+        name="x",
+        description="The exponent",
+        required=True,
+        opt_type=interactions.OptionType.STRING,
+    )
+    async def calc_exp(self, ctx: interactions.SlashContext, x: str) -> None:
+        """Calculate the exponential of a number."""
+        try:
+            expression = f"exp({x})"
+            result = evaluate_expression(expression)
+            await ctx.send(f"e^{x} = {result}")
+        except (CalculationError, ValueError, TypeError) as e:
+            await ctx.send(f"An error occurred: {e!s}", ephemeral=True)
+
+    @calc.subcommand(sub_cmd_name="fact", sub_cmd_description="Calculate the factorial of a number")
+    @interactions.slash_option(
+        name="x",
+        description="The number to calculate factorial",
+        required=True,
+        opt_type=interactions.OptionType.STRING,
+    )
+    async def calc_fact(self, ctx: interactions.SlashContext, x: str) -> None:
+        """Calculate the factorial of a number."""
+        try:
+            expression = f"factorial({x})"
+            result = evaluate_expression(expression)
+            await ctx.send(f"{x}! = {result}")
+        except (CalculationError, ValueError, TypeError) as e:
+            await ctx.send(f"An error occurred: {e!s}", ephemeral=True)
+
+    @calc.subcommand(sub_cmd_name="abs", sub_cmd_description="Calculate the absolute value of a number")
+    @interactions.slash_option(
+        name="x",
+        description="The number to calculate absolute value",
+        required=True,
+        opt_type=interactions.OptionType.STRING,
+    )
+    async def calc_abs(self, ctx: interactions.SlashContext, x: str) -> None:
+        """Calculate the absolute value of a number."""
+        try:
+            expression = f"abs({x})"
+            result = evaluate_expression(expression)
+            await ctx.send(f"|{x}| = {result}")
+        except (CalculationError, ValueError, TypeError) as e:
+            await ctx.send(f"An error occurred: {e!s}", ephemeral=True)
+
+    @calc.subcommand(sub_cmd_name="round", sub_cmd_description="Round a number to the nearest integer")
+    @interactions.slash_option(
+        name="x",
+        description="The number to round",
+        required=True,
+        opt_type=interactions.OptionType.STRING,
+    )
+    async def calc_round(self, ctx: interactions.SlashContext, x: str) -> None:
+        """Round a number to the nearest integer."""
+        try:
+            expression = f"round({x})"
+            result = evaluate_expression(expression)
+            await ctx.send(f"round({x}) = {result}")
+        except (CalculationError, ValueError, TypeError) as e:
+            await ctx.send(f"An error occurred: {e!s}", ephemeral=True)
+
+    @calc.subcommand(sub_cmd_name="ceil", sub_cmd_description="Round a number up to the nearest integer")
+    @interactions.slash_option(
+        name="x",
+        description="The number to round up",
+        required=True,
+        opt_type=interactions.OptionType.STRING,
+    )
+    async def calc_ceil(self, ctx: interactions.SlashContext, x: str) -> None:
+        """Round a number up to the nearest integer."""
+        try:
+            expression = f"ceil({x})"
+            result = evaluate_expression(expression)
+            await ctx.send(f"ceil({x}) = {result}")
+        except (CalculationError, ValueError, TypeError) as e:
+            await ctx.send(f"An error occurred: {e!s}", ephemeral=True)
+
+    @calc.subcommand(sub_cmd_name="floor", sub_cmd_description="Round a number down to the nearest integer")
+    @interactions.slash_option(
+        name="x",
+        description="The number to round down",
+        required=True,
+        opt_type=interactions.OptionType.STRING,
+    )
+    async def calc_floor(self, ctx: interactions.SlashContext, x: str) -> None:
+        """Round a number down to the nearest integer."""
+        try:
+            expression = f"floor({x})"
+            result = evaluate_expression(expression)
+            await ctx.send(f"floor({x}) = {result}")
+        except (CalculationError, ValueError, TypeError) as e:
+            await ctx.send(f"An error occurred: {e!s}", ephemeral=True)
+
+    @interactions.slash_command(name="calc_trig", description="Trigonometric functions")
+    async def calc_trig(self, ctx: interactions.SlashContext) -> None:
+        """Provide base command for trigonometric functions."""
+
+    @calc_trig.subcommand(sub_cmd_name="basic", sub_cmd_description="Basic trigonometric functions")
+    @interactions.slash_option(
+        name="function",
+        description="Choose the trigonometric function",
+        required=True,
+        opt_type=interactions.OptionType.STRING,
+        choices=[
+            {"name": "sin", "value": "sin"},
+            {"name": "cos", "value": "cos"},
+            {"name": "tan", "value": "tan"},
+        ],
+    )
+    @interactions.slash_option(
+        name="angle",
+        description="Angle in radians",
+        required=True,
+        opt_type=interactions.OptionType.STRING,
+    )
+    async def trig_basic(self, ctx: interactions.SlashContext, function: str, angle: str) -> None:
+        """Calculate basic trigonometric functions."""
+        try:
+            expression = f"{function}({angle})"
+            result = evaluate_expression(expression)
+            if is_close_to_zero(result):
+                result = 0
+            await ctx.send(f"The {function} of {angle} radians is: {result}")
+        except (CalculationError, ValueError, TypeError) as e:
+            await ctx.send(f"An error occurred: {e!s}", ephemeral=True)
+
+    @calc_trig.subcommand(sub_cmd_name="inverse", sub_cmd_description="Inverse trigonometric functions")
+    @interactions.slash_option(
+        name="function",
+        description="Choose the inverse trigonometric function",
+        required=True,
+        opt_type=interactions.OptionType.STRING,
+        choices=[
+            {"name": "asin", "value": "asin"},
+            {"name": "acos", "value": "acos"},
+            {"name": "atan", "value": "atan"},
+        ],
+    )
+    @interactions.slash_option(
+        name="value",
+        description="Input value",
+        required=True,
+        opt_type=interactions.OptionType.STRING,
+    )
+    async def trig_inverse(self, ctx: interactions.SlashContext, function: str, value: str) -> None:
+        """Calculate inverse trigonometric functions."""
+        try:
+            expression = f"{function}({value})"
+            result = evaluate_expression(expression)
+            if is_close_to_zero(result):
+                result = 0
+            await ctx.send(f"The {function} of {value} is: {result} radians")
+        except (CalculationError, ValueError, TypeError) as e:
+            await ctx.send(f"An error occurred: {e!s}", ephemeral=True)
+
+    @calc_trig.subcommand(sub_cmd_name="hyperbolic", sub_cmd_description="Hyperbolic trigonometric functions")
+    @interactions.slash_option(
+        name="function",
+        description="Choose the hyperbolic trigonometric function",
+        required=True,
+        opt_type=interactions.OptionType.STRING,
+        choices=[
+            {"name": "sinh", "value": "sinh"},
+            {"name": "cosh", "value": "cosh"},
+            {"name": "tanh", "value": "tanh"},
+            {"name": "asinh", "value": "asinh"},
+            {"name": "acosh", "value": "acosh"},
+            {"name": "atanh", "value": "atanh"},
+        ],
+    )
+    @interactions.slash_option(
+        name="value",
+        description="Input value",
+        required=True,
+        opt_type=interactions.OptionType.STRING,
+    )
+    async def trig_hyperbolic(self, ctx: interactions.SlashContext, function: str, value: str) -> None:
+        """Calculate hyperbolic trigonometric functions."""
+        try:
+            expression = f"{function}({value})"
+            result = evaluate_expression(expression)
+            if is_close_to_zero(result):
+                result = 0
+            await ctx.send(f"The {function} of {value} is: {result}")
+        except (CalculationError, ValueError, TypeError) as e:
+            await ctx.send(f"An error occurred: {e!s}", ephemeral=True)
+
+    @calc_trig.subcommand(sub_cmd_name="other", sub_cmd_description="Other trigonometric functions")
+    @interactions.slash_option(
+        name="function",
+        description="Choose the trigonometric function",
+        required=True,
+        opt_type=interactions.OptionType.STRING,
+        choices=[
+            {"name": "sec", "value": "sec"},
+            {"name": "csc", "value": "csc"},
+            {"name": "cot", "value": "cot"},
+        ],
+    )
+    @interactions.slash_option(
+        name="angle",
+        description="Angle in radians",
+        required=True,
+        opt_type=interactions.OptionType.STRING,
+    )
+    async def trig_other(self, ctx: interactions.SlashContext, function: str, angle: str) -> None:
+        """Calculate other trigonometric functions."""
+        try:
+            expression = f"{function}({angle})"
+            result = evaluate_expression(expression)
+            if is_close_to_zero(result):
+                result = 0
+            await ctx.send(f"The {function} of {angle} radians is: {result}")
+        except (CalculationError, ValueError, TypeError) as e:
+            await ctx.send(f"An error occurred: {e!s}", ephemeral=True)
+
     @interactions.slash_command(
         name="calc_info",
         description="Get information about the calculator",
@@ -440,23 +751,23 @@ class Calculator(interactions.Extension):
     async def calculate_info(self, ctx: interactions.SlashContext) -> None:
         """Provide information about allowed functions, constants, and operators."""
         functions_info = [
+            "`sqrt(x)` - square root of x",
             "`root(x, n)` - nth root of x",
-            "`log(x, base)` - logarithm of x with given base (default is e)",
             "`ln(x)` - natural logarithm of x",
+            "`log(x, base)` - logarithm of x with given base (default is e)",
             "`exp(x)` or `e^x` - exponential of x",
+            "`factorial(x)` or `fact(x)` or `x!` - factorial of x",
             "`sin(x)`, `cos(x)`, `tan(x)` - trigonometric functions",
             "`asin(x)`, `acos(x)`, `atan(x)` - inverse trigonometric functions",
             "`sinh(x)`, `cosh(x)`, `tanh(x)` - hyperbolic functions",
             "`asinh(x)`, `acosh(x)`, `atanh(x)` - inverse hyperbolic functions",
-            "`abs(x)` - absolute value of x",
-            "`factorial(x)` or `fact(x)` or `x!` - factorial of x",
-            "`round(x)` - round x to the nearest integer",
-            "`ceil(x)` - ceiling of x",
-            "`floor(x)` - floor of x",
             "`sec(x)` - secant of x",
             "`csc(x)` - cosecant of x",
             "`cot(x)` - cotangent of x",
-            "`sqrt(x)` - square root of x",
+            "`abs(x)` - absolute value of x",
+            "`round(x)` - round x to the nearest integer",
+            "`ceil(x)` - ceiling of x",
+            "`floor(x)` - floor of x",
         ]
 
         constants_list = ", ".join(f"`{const}`" for const in ALLOWED_CONSTANTS)
