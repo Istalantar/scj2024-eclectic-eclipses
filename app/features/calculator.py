@@ -12,6 +12,7 @@ import decimal
 import math
 import operator
 import re
+from fractions import Fraction
 
 import interactions
 
@@ -181,6 +182,8 @@ ALLOWED_FUNCTIONS = {
     "sec": calculate_secant,
     "csc": calculate_cosecant,
     "cot": calculate_cotangent,
+    "radians": math.radians,
+    "degrees": math.degrees,
     "abs": abs,
     "round": round,
     "ceil": math.ceil,
@@ -189,8 +192,12 @@ ALLOWED_FUNCTIONS = {
 
 ALLOWED_CONSTANTS = {
     "PI": math.pi,
+    "pi": math.pi,
     "E": math.e,
+    "e": math.e,
 }
+
+TOLERANCE = 1e-10
 
 
 def preprocess_expression(expression: str) -> str:
@@ -210,6 +217,8 @@ def preprocess_expression(expression: str) -> str:
     expression = re.sub(r"(\d+)!", r"factorial(\1)", expression)
     expression = re.sub(r"(\d)(\()", r"\1*\2", expression)
     expression = re.sub(r"(\))(\d)", r"\1*\2", expression)
+    expression = re.sub(r"rad\(", "radians(", expression)
+    expression = re.sub(r"deg\(", "degrees(", expression)
     constant_pattern = r"|".join(re.escape(const) for const in ALLOWED_CONSTANTS)
     expression = re.sub(rf"(\d)({constant_pattern})", r"\1*\2", expression)
     expression = re.sub(rf"({constant_pattern})(\d)", r"\1*\2", expression)
@@ -249,11 +258,6 @@ def check_for_complex_numbers(expression: str) -> None:
                 raise CalculationError(error_message)
 
 
-def is_close_to_zero(value: float, tolerance: float = 1e-10) -> bool:
-    """Check if a value is close to zero within a given tolerance."""
-    return abs(value) < tolerance
-
-
 def evaluate_expression(expression: str) -> float:
     """Evaluate a mathematical expression.
 
@@ -274,7 +278,7 @@ def evaluate_expression(expression: str) -> float:
         preprocessed_expression = preprocess_expression(expression)
         check_for_complex_numbers(preprocessed_expression)
         node = ast.parse(preprocessed_expression, mode="eval").body
-        return evaluate_node(node)
+        return smart_round(evaluate_node(node))
     except ZeroDivisionError:
         error_message = "Error: Division by zero."
         raise CalculationError(error_message) from None
@@ -283,6 +287,18 @@ def evaluate_expression(expression: str) -> float:
     except Exception as error:
         error_message = f"Syntax error: {error}"
         raise CalculationError(error_message) from error
+
+
+def radians_to_pi_symbolic(angle: float) -> str:
+    """Convert a radian value to a symbolic representation in terms of pi."""
+    pi_fraction = Fraction(angle / math.pi).limit_denominator()
+    numerator, denominator = pi_fraction.numerator, pi_fraction.denominator
+
+    if numerator == 0:
+        return "0"
+    if denominator == 1:
+        return f"{numerator}π"
+    return f"{numerator}π/{denominator}"
 
 
 def count_decimal_places(number: float) -> int:
@@ -295,6 +311,14 @@ def adjust_precision_for_multiplication(result: float, operands: list[float]) ->
     """Adjust the precision of the result based on the operands for multiplication."""
     total_decimal_places = sum(count_decimal_places(op) for op in operands)
     return round(result, total_decimal_places)
+
+
+def smart_round(value: float, decimals: int = 10) -> float:
+    """Intelligently rounds a float to an integer if close enough, otherwise to 'decimals' places."""
+    if abs(round(value) - value) < TOLERANCE:
+        return round(value)
+    rounded = round(value, decimals)
+    return int(rounded) if rounded.is_integer() else rounded
 
 
 def evaluate_binary_operation(node: ast.BinOp) -> float:
@@ -408,7 +432,7 @@ def evaluate_node(node: ast.BinOp | ast.UnaryOp | ast.Constant | ast.Name | ast.
     else:
         error_message = "Unsupported node type"
         raise CalculationError(error_message)
-    return 0.0 if is_close_to_zero(result) else result
+    return result
 
 
 class Calculator(interactions.Extension):
@@ -621,6 +645,39 @@ class Calculator(interactions.Extension):
         except (CalculationError, ValueError, TypeError) as e:
             await ctx.send(f"An error occurred: {e!s}", ephemeral=True)
 
+    @calc.subcommand(sub_cmd_name="rad", sub_cmd_description="Convert a degree value into radians")
+    @interactions.slash_option(
+        name="x",
+        description="Angle in degree",
+        required=True,
+        opt_type=interactions.OptionType.STRING,
+    )
+    async def calc_rad(self, ctx: interactions.SlashContext, x: str) -> None:
+        """Convert a degree value into radians."""
+        try:
+            expression = f"radians({x})"
+            result = evaluate_expression(expression)
+            result_pi = result
+            await ctx.send(f"{x}° in radians:\nDecimal: {result:.6f}\nIn terms of π: {result_pi}")
+        except (CalculationError, ValueError, TypeError) as e:
+            await ctx.send(f"An error occurred: {e!s}", ephemeral=True)
+
+    @calc.subcommand(sub_cmd_name="deg", sub_cmd_description="Convert a radians value into degrees")
+    @interactions.slash_option(
+        name="x",
+        description="Angle in radians",
+        required=True,
+        opt_type=interactions.OptionType.STRING,
+    )
+    async def calc_deg(self, ctx: interactions.SlashContext, x: str) -> None:
+        """Convert a radians value into degrees."""
+        try:
+            expression = f"degrees({x})"
+            result = evaluate_expression(expression)
+            await ctx.send(f"{x} in degrees: {result}")
+        except (CalculationError, ValueError, TypeError) as e:
+            await ctx.send(f"An error occurred: {e!s}", ephemeral=True)
+
     @interactions.slash_command(name="calc_trig", description="Trigonometric functions")
     async def calc_trig(self, ctx: interactions.SlashContext) -> None:
         """Provide base command for trigonometric functions."""
@@ -648,38 +705,7 @@ class Calculator(interactions.Extension):
         try:
             expression = f"{function}({angle})"
             result = evaluate_expression(expression)
-            if is_close_to_zero(result):
-                result = 0
             await ctx.send(f"The {function} of {angle} radians is: {result}")
-        except (CalculationError, ValueError, TypeError) as e:
-            await ctx.send(f"An error occurred: {e!s}", ephemeral=True)
-
-    @calc_trig.subcommand(sub_cmd_name="inverse", sub_cmd_description="Inverse trigonometric functions")
-    @interactions.slash_option(
-        name="function",
-        description="Choose the inverse trigonometric function",
-        required=True,
-        opt_type=interactions.OptionType.STRING,
-        choices=[
-            {"name": "asin", "value": "asin"},
-            {"name": "acos", "value": "acos"},
-            {"name": "atan", "value": "atan"},
-        ],
-    )
-    @interactions.slash_option(
-        name="value",
-        description="Input value",
-        required=True,
-        opt_type=interactions.OptionType.STRING,
-    )
-    async def trig_inverse(self, ctx: interactions.SlashContext, function: str, value: str) -> None:
-        """Calculate inverse trigonometric functions."""
-        try:
-            expression = f"{function}({value})"
-            result = evaluate_expression(expression)
-            if is_close_to_zero(result):
-                result = 0
-            await ctx.send(f"The {function} of {value} is: {result} radians")
         except (CalculationError, ValueError, TypeError) as e:
             await ctx.send(f"An error occurred: {e!s}", ephemeral=True)
 
@@ -693,9 +719,6 @@ class Calculator(interactions.Extension):
             {"name": "sinh", "value": "sinh"},
             {"name": "cosh", "value": "cosh"},
             {"name": "tanh", "value": "tanh"},
-            {"name": "asinh", "value": "asinh"},
-            {"name": "acosh", "value": "acosh"},
-            {"name": "atanh", "value": "atanh"},
         ],
     )
     @interactions.slash_option(
@@ -709,9 +732,37 @@ class Calculator(interactions.Extension):
         try:
             expression = f"{function}({value})"
             result = evaluate_expression(expression)
-            if is_close_to_zero(result):
-                result = 0
             await ctx.send(f"The {function} of {value} is: {result}")
+        except (CalculationError, ValueError, TypeError) as e:
+            await ctx.send(f"An error occurred: {e!s}", ephemeral=True)
+
+    @calc_trig.subcommand(sub_cmd_name="inverse", sub_cmd_description="Inverse trigonometric functions")
+    @interactions.slash_option(
+        name="function",
+        description="Choose the inverse of basic and hyperbolic trigonometric function",
+        required=True,
+        opt_type=interactions.OptionType.STRING,
+        choices=[
+            {"name": "asin", "value": "asin"},
+            {"name": "acos", "value": "acos"},
+            {"name": "atan", "value": "atan"},
+            {"name": "asinh", "value": "asinh"},
+            {"name": "acosh", "value": "acosh"},
+            {"name": "atanh", "value": "atanh"},
+        ],
+    )
+    @interactions.slash_option(
+        name="value",
+        description="Input value",
+        required=True,
+        opt_type=interactions.OptionType.STRING,
+    )
+    async def trig_inverse(self, ctx: interactions.SlashContext, function: str, value: str) -> None:
+        """Calculate inverse trigonometric functions."""
+        try:
+            expression = f"{function}({value})"
+            result = evaluate_expression(expression)
+            await ctx.send(f"The {function} of {value} is: {result} radians")
         except (CalculationError, ValueError, TypeError) as e:
             await ctx.send(f"An error occurred: {e!s}", ephemeral=True)
 
@@ -738,8 +789,6 @@ class Calculator(interactions.Extension):
         try:
             expression = f"{function}({angle})"
             result = evaluate_expression(expression)
-            if is_close_to_zero(result):
-                result = 0
             await ctx.send(f"The {function} of {angle} radians is: {result}")
         except (CalculationError, ValueError, TypeError) as e:
             await ctx.send(f"An error occurred: {e!s}", ephemeral=True)
@@ -764,6 +813,7 @@ class Calculator(interactions.Extension):
             "`sec(x)` - secant of x",
             "`csc(x)` - cosecant of x",
             "`cot(x)` - cotangent of x",
+            "`radians(x)` or `rad(x)` - convert a degree value into radians",
             "`abs(x)` - absolute value of x",
             "`round(x)` - round x to the nearest integer",
             "`ceil(x)` - ceiling of x",
@@ -791,7 +841,7 @@ class Calculator(interactions.Extension):
         embed.add_field(name="Allowed Functions", value="\n".join(functions_info), inline=False)
         embed.add_field(name="Allowed Constants", value=constants_list, inline=False)
         embed.add_field(name="Allowed Operators", value="\n".join(operators_info), inline=False)
-        embed.set_footer(text="Note: Complex numbers are not supported.")
+        embed.set_footer(text="Note: Complex numbers are not supported and angle unit is radians.")
 
         await ctx.send(embeds=[embed], ephemeral=True)
 
@@ -801,6 +851,7 @@ class Calculator(interactions.Extension):
         commands_info = [
             "`/calc_help` - Get a list of available calculator commands",
             "`/calc_info` - Get information about the calculator",
+            "`/calculator` - Open the interactive calculator",
         ]
 
         commands_calc = [
@@ -815,6 +866,8 @@ class Calculator(interactions.Extension):
             "`/calc round [x]` - Round x to the nearest integer",
             "`/calc ceil [x]` - Round x up to the nearest integer",
             "`/calc floor [x]` - Round x down to the nearest integer",
+            "`/calc rad [x] - Convert a degree value into radians",
+            "`/calc deg [x] - Convert a radians value into degree",
             "`/calc_trig basic [function] [angle]` - Calculate basic trigonometric functions",
             "`/calc_trig inverse [function] [value]` - Calculate inverse trigonometric functions",
             "`/calc_trig hyperbolic [function] [value]` - Calculate hyperbolic trigonometric functions",
