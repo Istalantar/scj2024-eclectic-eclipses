@@ -814,6 +814,7 @@ class Calculator(interactions.Extension):
             "`csc(x)` - cosecant of x",
             "`cot(x)` - cotangent of x",
             "`radians(x)` or `rad(x)` - convert a degree value into radians",
+            "`degrees(x)` or `deg(x)` - convert a radian value into degree",
             "`abs(x)` - absolute value of x",
             "`round(x)` - round x to the nearest integer",
             "`ceil(x)` - ceiling of x",
