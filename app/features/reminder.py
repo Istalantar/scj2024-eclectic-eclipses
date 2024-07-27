@@ -52,7 +52,7 @@ class Alarm(interactions.Extension):
             delay = seconds_until_time(reminder_time)
             await ctx.send(f"I'll remind you on {reminder_time.strftime('%A, %B %d, %Y at %H:%M')}")
             await asyncio.sleep(delay)
-            await ctx.send(f"REMINDER: {message}")
+            await ctx.send(f"{ctx.author.mention} REMINDER: {message}")
         except ValueError:
             await ctx.send("Invalid date and time format. Please use 'YYYY-MM-DD HH:MM' format.")
 
@@ -103,7 +103,7 @@ class Alarm(interactions.Extension):
                 await asyncio.sleep(duration * 3600)
             case _:
                 pass
-        await ctx.send(f"REMINDER: {message}")
+        await ctx.send(f"{ctx.author.mention} REMINDER: {message}")
 
     @set.subcommand(
         sub_cmd_name="timezone",
