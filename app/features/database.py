@@ -110,7 +110,7 @@ class Database(Extension):
         """Return all stored timezone data."""
         async with self.bot.db_conn.cursor() as cursor:
             cur = await cursor.execute("""SELECT * from timezone""")
-        return await cur.fetchall()
+            return await cur.fetchall()
 
     async def add_timezone(self, user_id: int, tz: str) -> None:
         """Add users timezone to db."""

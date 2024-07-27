@@ -3,6 +3,7 @@ import datetime
 import zoneinfo
 
 import interactions
+from interactions.api import events
 
 
 class Alarm(interactions.Extension):
@@ -13,8 +14,9 @@ class Alarm(interactions.Extension):
         print(f"{self.bot.user} loaded alarm extension")
         self.tz = None
 
-    async def async_start(self) -> None:
-        """Retrieve timezone data when loop starts."""
+    @interactions.listen(events.Ready)
+    async def bot_ready(self) -> None:
+        """Retrieve timezone data when the bot is ready."""
         utz = await self.bot.db.get_timezones()
         self.tz = UserTimezones(utz)
 
