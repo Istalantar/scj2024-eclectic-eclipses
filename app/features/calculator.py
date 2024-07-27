@@ -780,7 +780,8 @@ class Calculator(interactions.Extension):
         embed.add_field(name="Allowed Operators", value="\n".join(operators_info), inline=False)
         embed.set_footer(
             text="Note: \n- Complex numbers are not supported and angle unit is radians."
-            "\n-Use points for decimals; commas are not supported",
+            "\n- Use points for decimals; commas are not supported"
+            "\n- Use radians unit for angles (or use rad() function to convert degrees angle)",
         )
 
         await ctx.send(embeds=[embed], ephemeral=True)
