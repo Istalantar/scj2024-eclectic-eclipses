@@ -11,7 +11,12 @@ class Alarm(interactions.Extension):
     def __init__(self, bot: interactions.Client) -> None:
         self.bot = bot
         print(f"{self.bot.user} loaded alarm extension")
-        self.tz = UserTimezones()
+        self.tz = None
+
+    async def async_start(self) -> None:
+        """Retrieve timezone data when loop starts."""
+        utz = await self.bot.db.get_timezones()
+        self.tz = UserTimezones(utz)
 
     base = interactions.SlashCommand(name="remindme", description="Alarm base group")
     set = interactions.SlashCommand(name="set", description="Set base group")
@@ -127,6 +132,7 @@ class Alarm(interactions.Extension):
         """Set timezone based on user selection."""
         # timezone selected by the user from the autocomplete list
         self.tz.add_user(ctx.author.id, timezone)
+        await self.bot.db.add_timezone(ctx.author, timezone)
         await ctx.send(f"timezone set to {timezone}")
 
     @set_timezone.autocomplete("timezone")
@@ -159,14 +165,14 @@ def seconds_until_time(target_datetime: datetime.datetime) -> float:
     seconds_until = (target_datetime - local_dt_now).total_seconds()
 
     # Handle negative values for times in the past (return 0)
-    return float(max(0, seconds_until))
+    return float(max(0.0, seconds_until))
 
 
 class UserTimezones:
     """Class representing database operation for storing timezone information."""
 
-    def __init__(self) -> None:
-        self.timezones = {}
+    def __init__(self, db_timezones: list) -> None:
+        self.timezones = dict(db_timezones)
 
     def add_user(self, user_id: int, timezone: str) -> None:
         """Add user to dict."""

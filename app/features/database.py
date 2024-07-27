@@ -15,6 +15,7 @@ class Database(Extension):
     async def populate_tables(self) -> None:
         """Run the coroutines to create the db tables."""
         await self.todo_table()
+        await self.timezone_table()
 
     @listen(events.Connect)
     async def bot_connect(self, event: events.Connect) -> None:
@@ -93,3 +94,27 @@ class Database(Extension):
             query = """SELECT * from todo WHERE user_id = ? AND item = ?"""
             response = await cursor.execute(query, (user_id, item))
             return await response.fetchone()
+
+    # Timezone methods
+    async def timezone_table(self) -> None:
+        """Creation of timezone db table."""
+        async with self.bot.db_conn.cursor() as cursor:
+            await cursor.execute("""
+            CREATE TABLE IF NOT EXISTS
+            timezone (user_id INTEGER PRIMARY KEY,
+            tz TEXT NOT NULL)
+            """)
+        await self.bot.db_conn.commit()
+
+    async def get_timezones(self) -> list[tuple[int, str]]:
+        """Return all stored timezone data."""
+        async with self.bot.db_conn.cursor() as cursor:
+            cur = await cursor.execute("""SELECT * from timezone""")
+        return await cur.fetchall()
+
+    async def add_timezone(self, user_id: int, tz: str) -> None:
+        """Add users timezone to db."""
+        async with self.bot.db_conn.cursor() as cursor:
+            query = """INSERT INTO timezone (user_id, tz) VALUES (?,?)"""
+            await cursor.execute(query, (user_id, tz))
+        await self.bot.db_conn.commit()
