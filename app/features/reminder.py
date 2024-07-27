@@ -41,14 +41,12 @@ class Alarm(interactions.Extension):
         message: str = "Your previously set reminder has been triggered",
     ) -> None:
         """Create a reminder for a specific time of the day based on a time input."""
-        if ctx.member is not None:
-            if not self.tz.has_user(ctx.member):
-                await ctx.send("unknown timezone, please set your timezone with /set timezone")
-                return
-        else:
-            raise ValueError
+        if not self.tz.has_user(ctx.author.id):
+            await ctx.send("unknown timezone, please set your timezone with /set timezone")
+            return
+
         try:
-            user_tz = self.tz.get_timezone(ctx.member)
+            user_tz = self.tz.get_timezone(ctx.author.id)
             user_tz_obj = zoneinfo.ZoneInfo(user_tz)
             reminder_time = datetime.datetime.strptime(date_time, "%Y-%m-%d %H:%M").replace(tzinfo=user_tz_obj)
             delay = seconds_until_time(reminder_time)
@@ -124,12 +122,9 @@ class Alarm(interactions.Extension):
         timezone: str,
     ) -> None:
         """Set timezone based on user selection."""
-        if ctx.member is not None:
-            # timezone selected by the user from the autocomplete list
-            self.tz.add_user(ctx.member, timezone)
-            await ctx.send(f"timezone set to {timezone}")
-        else:
-            raise ValueError
+        # timezone selected by the user from the autocomplete list
+        self.tz.add_user(ctx.author.id, timezone)
+        await ctx.send(f"timezone set to {timezone}")
 
     @set_timezone.autocomplete("timezone")
     async def timezone_autocomplete(self, ctx: interactions.AutocompleteContext) -> None:
@@ -170,14 +165,14 @@ class UserTimezones:
     def __init__(self) -> None:
         self.timezones = {}
 
-    def add_user(self, user_id: interactions.Member, timezone: str) -> None:
+    def add_user(self, user_id: int, timezone: str) -> None:
         """Add user to dict."""
         self.timezones[user_id] = timezone
 
-    def has_user(self, user_id: interactions.Member) -> bool:
+    def has_user(self, user_id: int) -> bool:
         """Check if user is in dict."""
         return user_id in self.timezones
 
-    def get_timezone(self, user_id: interactions.Member) -> str:
+    def get_timezone(self, user_id: int) -> str:
         """Return timezone information for user_id key."""
         return self.timezones[user_id]
