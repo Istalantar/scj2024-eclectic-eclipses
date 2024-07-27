@@ -50,7 +50,10 @@ class Alarm(interactions.Extension):
             user_tz_obj = zoneinfo.ZoneInfo(user_tz)
             reminder_time = datetime.datetime.strptime(date_time, "%Y-%m-%d %H:%M").replace(tzinfo=user_tz_obj)
             delay = seconds_until_time(reminder_time)
-            await ctx.send(f"I'll remind you on {reminder_time.strftime('%A, %B %d, %Y at %H:%M')}")
+            await ctx.send(
+                f"I'll remind you on {reminder_time.strftime('%A, %B %d, %Y at %H:%M')} "
+                f"(<t:{int(reminder_time.timestamp())}:R>)",
+            )
             await asyncio.sleep(delay)
             await ctx.send(f"{ctx.author.mention} REMINDER: {message}")
         except ValueError:
