@@ -32,4 +32,5 @@ if __name__ == "__main__":
 
     bot.load_extension("features.todo_list")
     bot.load_extension("features.database")
+    bot.load_extension("features.reminder")
     bot.start(token)
