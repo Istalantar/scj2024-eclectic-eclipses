@@ -212,7 +212,7 @@ def preprocess_expression(expression: str) -> str:
         The preprocessed expression.
 
     """
-    expression = expression.replace("^", "**").replace(",", ".")
+    expression = expression.replace("^", "**").replace(",", ".").replace(" ", "")
     expression = re.sub(r"fact\(", "factorial(", expression)
     expression = re.sub(r"(\d+)!", r"factorial(\1)", expression)
     expression = re.sub(r"(\d)(\()", r"\1*\2", expression)
@@ -476,16 +476,17 @@ class Calculator(interactions.Extension):
 
     @calc.subcommand(sub_cmd_name="sqrt", sub_cmd_description="Calculate the square root")
     @interactions.slash_option(
-        name="number",
+        name="x",
         description="Number to calculate the square root of",
         required=True,
         opt_type=interactions.OptionType.STRING,
     )
-    async def calc_sqrt(self, ctx: interactions.SlashContext, number: str) -> None:
+    async def calc_sqrt(self, ctx: interactions.SlashContext, x: str) -> None:
         """Calculate the square root of a number."""
         try:
-            result = evaluate_expression(number)
-            await ctx.send(f"The square root of {number} is: {result}")
+            expression = f"sqrt({x})"
+            result = evaluate_expression(expression)
+            await ctx.send(f"The square root of {x} is: {result}")
         except (CalculationError, ValueError, TypeError) as e:
             await ctx.send(f"An error occurred: {e!s}", ephemeral=True)
 
@@ -505,7 +506,7 @@ class Calculator(interactions.Extension):
     async def calc_root(self, ctx: interactions.SlashContext, x: str, n: str) -> None:
         """Calculate the nth root of a number."""
         try:
-            expression = f"root({x}, {n})"
+            expression = f"root({x},{n})"
             result = evaluate_expression(expression)
             await ctx.send(f"The {n}th root of {x} is: {result}")
         except (CalculationError, ValueError, TypeError) as e:
@@ -536,14 +537,14 @@ class Calculator(interactions.Extension):
     )
     @interactions.slash_option(
         name="base",
-        description="The base of the logarithm (default is 10)",
-        required=False,
+        description="The base of the logarithm",
+        required=True,
         opt_type=interactions.OptionType.STRING,
     )
-    async def calc_log(self, ctx: interactions.SlashContext, x: str, base: str = "10") -> None:
+    async def calc_log(self, ctx: interactions.SlashContext, x: str, base: str) -> None:
         """Calculate the logarithm of a number with a specified base."""
         try:
-            expression = f"log({x}, {base})"
+            expression = f"log({x},{base})"
             result = evaluate_expression(expression)
             await ctx.send(f"The logarithm of {x} with base {base} is: {result}")
         except (CalculationError, ValueError, TypeError) as e:
@@ -581,70 +582,6 @@ class Calculator(interactions.Extension):
         except (CalculationError, ValueError, TypeError) as e:
             await ctx.send(f"An error occurred: {e!s}", ephemeral=True)
 
-    @calc.subcommand(sub_cmd_name="abs", sub_cmd_description="Calculate the absolute value of a number")
-    @interactions.slash_option(
-        name="x",
-        description="The number to calculate absolute value",
-        required=True,
-        opt_type=interactions.OptionType.STRING,
-    )
-    async def calc_abs(self, ctx: interactions.SlashContext, x: str) -> None:
-        """Calculate the absolute value of a number."""
-        try:
-            expression = f"abs({x})"
-            result = evaluate_expression(expression)
-            await ctx.send(f"|{x}| = {result}")
-        except (CalculationError, ValueError, TypeError) as e:
-            await ctx.send(f"An error occurred: {e!s}", ephemeral=True)
-
-    @calc.subcommand(sub_cmd_name="round", sub_cmd_description="Round a number to the nearest integer")
-    @interactions.slash_option(
-        name="x",
-        description="The number to round",
-        required=True,
-        opt_type=interactions.OptionType.STRING,
-    )
-    async def calc_round(self, ctx: interactions.SlashContext, x: str) -> None:
-        """Round a number to the nearest integer."""
-        try:
-            expression = f"round({x})"
-            result = evaluate_expression(expression)
-            await ctx.send(f"round({x}) = {result}")
-        except (CalculationError, ValueError, TypeError) as e:
-            await ctx.send(f"An error occurred: {e!s}", ephemeral=True)
-
-    @calc.subcommand(sub_cmd_name="ceil", sub_cmd_description="Round a number up to the nearest integer")
-    @interactions.slash_option(
-        name="x",
-        description="The number to round up",
-        required=True,
-        opt_type=interactions.OptionType.STRING,
-    )
-    async def calc_ceil(self, ctx: interactions.SlashContext, x: str) -> None:
-        """Round a number up to the nearest integer."""
-        try:
-            expression = f"ceil({x})"
-            result = evaluate_expression(expression)
-            await ctx.send(f"ceil({x}) = {result}")
-        except (CalculationError, ValueError, TypeError) as e:
-            await ctx.send(f"An error occurred: {e!s}", ephemeral=True)
-
-    @calc.subcommand(sub_cmd_name="floor", sub_cmd_description="Round a number down to the nearest integer")
-    @interactions.slash_option(
-        name="x",
-        description="The number to round down",
-        required=True,
-        opt_type=interactions.OptionType.STRING,
-    )
-    async def calc_floor(self, ctx: interactions.SlashContext, x: str) -> None:
-        """Round a number down to the nearest integer."""
-        try:
-            expression = f"floor({x})"
-            result = evaluate_expression(expression)
-            await ctx.send(f"floor({x}) = {result}")
-        except (CalculationError, ValueError, TypeError) as e:
-            await ctx.send(f"An error occurred: {e!s}", ephemeral=True)
-
     @calc.subcommand(sub_cmd_name="rad", sub_cmd_description="Convert a degree value into radians")
     @interactions.slash_option(
         name="x",
@@ -657,7 +594,7 @@ class Calculator(interactions.Extension):
         try:
             expression = f"radians({x})"
             result = evaluate_expression(expression)
-            result_pi = result
+            result_pi = radians_to_pi_symbolic(result)
             await ctx.send(f"{x}° in radians:\nDecimal: {result:.6f}\nIn terms of π: {result_pi}")
         except (CalculationError, ValueError, TypeError) as e:
             await ctx.send(f"An error occurred: {e!s}", ephemeral=True)
@@ -814,7 +751,6 @@ class Calculator(interactions.Extension):
             "`csc(x)` - cosecant of x",
             "`cot(x)` - cotangent of x",
             "`radians(x)` or `rad(x)` - convert a degree value into radians",
-            "`degrees(x)` or `deg(x)` - convert a radian value into degree",
             "`abs(x)` - absolute value of x",
             "`round(x)` - round x to the nearest integer",
             "`ceil(x)` - ceiling of x",
@@ -863,14 +799,11 @@ class Calculator(interactions.Extension):
             "`/calc log [x] [base]` - Calculate the logarithm of x with a specified base",
             "`/calc exp [x]` - Calculate the exponential of x",
             "`/calc fact [x]` - Calculate the factorial of x",
-            "`/calc abs [x]` - Calculate the absolute value of x",
-            "`/calc round [x]` - Round x to the nearest integer",
-            "`/calc ceil [x]` - Round x up to the nearest integer",
-            "`/calc floor [x]` - Round x down to the nearest integer",
             "`/calc rad [x] - Convert a degree value into radians",
             "`/calc deg [x] - Convert a radians value into degree",
             "`/calc_trig basic [function] [angle]` - Calculate basic trigonometric functions",
-            "`/calc_trig inverse [function] [value]` - Calculate inverse trigonometric functions",
+            "`/calc_trig inverse [function] [value]` - Calculate inverse of basic and hyperbolic "
+            "trigonometric functions",
             "`/calc_trig hyperbolic [function] [value]` - Calculate hyperbolic trigonometric functions",
             "`/calc_trig other [function] [angle]` - Calculate other trigonometric functions",
         ]
