@@ -212,7 +212,7 @@ def preprocess_expression(expression: str) -> str:
         The preprocessed expression.
 
     """
-    expression = expression.replace("^", "**").replace(",", ".").replace(" ", "")
+    expression = expression.replace("^", "**").replace(" ", "")
     expression = re.sub(r"fact\(", "factorial(", expression)
     expression = re.sub(r"(\d+)!", r"factorial(\1)", expression)
     expression = re.sub(r"(\d)(\()", r"\1*\2", expression)
@@ -778,7 +778,10 @@ class Calculator(interactions.Extension):
         embed.add_field(name="Allowed Functions", value="\n".join(functions_info), inline=False)
         embed.add_field(name="Allowed Constants", value=constants_list, inline=False)
         embed.add_field(name="Allowed Operators", value="\n".join(operators_info), inline=False)
-        embed.set_footer(text="Note: Complex numbers are not supported and angle unit is radians.")
+        embed.set_footer(
+            text="Note: \n- Complex numbers are not supported and angle unit is radians."
+            "\n-Use points for decimals; commas are not supported",
+        )
 
         await ctx.send(embeds=[embed], ephemeral=True)
 
