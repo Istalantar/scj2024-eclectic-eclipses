@@ -1,24 +1,36 @@
 import os
-
 import interactions
 from dotenv import load_dotenv
+import sys
+from pathlib import Path
 
+from interactions import (
+    Client,
+    Intents,
+    listen,
+)
+from interactions.api.events import Ready
+
+bot = Client(intents=Intents.DEFAULT)
+
+env_path = Path(".env")
+if not Path.exists(env_path):
+    print("No .env file for the token found")
+    sys.exit(1)
 load_dotenv()
-bot_token = os.getenv("BOT_TOKEN")
-
-bot = interactions.Client(intents=interactions.Intents.DEFAULT, sync_interactions=True)
+token = os.getenv("TOKEN")
 
 
-def setup(bot: interactions.Client) -> None:
-    """Add the extensions before running the Bot."""
-    bot.load_extension("features.Dictionary")
 
-
-def main() -> None:
-    """Initialize the bot."""
-    bot.start(bot_token)
+@listen(Ready)
+async def on_ready() -> None:
+    """Doc string here."""
+    print("Ready")
+    print(f"This bot is owned by {bot.owner}")
 
 
 if __name__ == "__main__":
-    setup(bot)
-    main()
+    bot.load_extension("features.todo_list")
+    bot.load_extension("features.database")
+    bot.load_extension("features.Dictionary")
+    bot.start(token)

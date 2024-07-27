@@ -8,6 +8,7 @@ license = "MIT"
 [tool.poetry.dependencies]
 python = "3.12.*"
 discord-py-interactions = "^5.13.1"
+aiosqlite = "^0.20.0"
 
 [tool.poetry.dev-dependencies]
 ruff = "~0.5.0"
@@ -49,6 +50,8 @@ ignore = [
     "D415",
     # Docstring quotes.
     "D301",
+    # Single-line implicit string.
+    "ISC001",
     # Builtins.
     "A",
     # Print statements.
