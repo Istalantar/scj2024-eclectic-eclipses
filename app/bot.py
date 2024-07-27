@@ -1,9 +1,8 @@
 import os
-import interactions
-from dotenv import load_dotenv
 import sys
 from pathlib import Path
 
+from dotenv import load_dotenv
 from interactions import (
     Client,
     Intents,
@@ -21,7 +20,6 @@ load_dotenv()
 token = os.getenv("TOKEN")
 
 
-
 @listen(Ready)
 async def on_ready() -> None:
     """Doc string here."""
@@ -32,5 +30,5 @@ async def on_ready() -> None:
 if __name__ == "__main__":
     bot.load_extension("features.todo_list")
     bot.load_extension("features.database")
-    bot.load_extension("features.Dictionary")
+    bot.load_extension("features.dictionary")
     bot.start(token)
