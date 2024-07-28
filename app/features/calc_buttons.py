@@ -8,7 +8,6 @@ from .calculator import CalculationError, evaluate_expression
 
 buttons = [
     ActionRow(
-        Button(style=1, label="0", custom_id="result"),
         Button(label="<", style=3, custom_id="<", disabled=True),
         Button(label=">", style=3, custom_id=">"),
         Button(label="<", style=4, custom_id="calc_back"),
@@ -28,12 +27,18 @@ buttons += [
         Button(label="/", style=1, custom_id="calc_/"),
     ),
 ]
-buttons += [ActionRow(*(Button(label=f"{i}", custom_id=f"calc_{i}", style=2) for i in range(1, 4)))]
+buttons += [
+    ActionRow(
+        *(Button(label=f"{i}", custom_id=f"calc_{i}", style=2) for i in range(1, 4)),
+        Button(label=".....", style=2, disabled=True),
+    )
+]
 buttons += [
     ActionRow(
         Button(label=".", style=2, custom_id="calc_."),
         Button(label="0", custom_id="calc_0", style=2),
         Button(label="=", style=3, custom_id="calc_="),
+        Button(style=3, label="Output", custom_id="result"),
     ),
 ]
 
@@ -63,11 +68,8 @@ class ButtonCalc(Extension):
         """Triggers for calc pagination buttons."""
         await ctx.defer(edit_origin=True)
         if ctx.custom_id == ">":
-            lb = ctx.message.components[0].components[0].to_dict()
-            lb["custom_id"] = "result"
             comp = [
                 ActionRow(
-                    Button.from_dict(lb),
                     Button(label="<", style=3, custom_id="<"),
                     Button(label=">", style=3, custom_id=">", disabled=True),
                 ),
@@ -78,25 +80,24 @@ class ButtonCalc(Extension):
             ]
             await ctx.edit_origin(components=comp)
         else:
-            current_label: BaseComponent = ctx.message.components[0].components[0]
-            base_label: BaseComponent = buttons[0].components[0]
-            base_label.label = current_label.to_dict()["label"]
             await ctx.edit_origin(components=buttons)
 
     @component_callback(re.compile("calc_.*"))
     async def callback_for_calc_buttons(self, ctx: ComponentContext) -> None:
         """Triggers for calc text buttons."""
-        await ctx.defer(edit_origin=True)
+        await ctx.defer(edit_origin=True, suppress_error=True)
         components = ctx.message.components
-        a_r: ActionRow = components[0]
-        label_button: BaseComponent = a_r.components[0]
+        a_r: ActionRow = components[-1]
+        label_button: BaseComponent = a_r.components[-1]
+        equation_button = components[-2].components[-1]
         content = ctx.message.content.strip("` ")
         match ctx.custom_id:
             case "calc_=":
                 try:
-                    calculation = evaluate_expression(ctx.message.content.strip("`"))
-                    label_button.style = ButtonStyle.BLURPLE
+                    calculation = evaluate_expression(content)
+                    label_button.style = ButtonStyle.GREEN
                     label_button.label = f"{calculation}"
+                    equation_button.label = content
                     content = ""
                 except CalculationError:
                     label_button.style = ButtonStyle.RED
@@ -107,16 +108,16 @@ class ButtonCalc(Extension):
                     await ctx.edit_origin(content=f'`{content[:-1] or " "}`')
             case _:
                 if content and label_button.style == ButtonStyle.RED:
-                    label_button.style = ButtonStyle.BLURPLE
-                    label_button.label = "0"
+                    label_button.style = ButtonStyle.GREEN
+                    label_button.label = "Output"
                     await ctx.edit_origin(components=components)
                 await ctx.edit_origin(content=f"`{content + ctx.custom_id.split('_')[1]}`")
 
     @component_callback("result")
     async def result_callback(self, ctx: ComponentContext) -> None:
-        """Triggers for calc result button."""
-        result: Button | BaseComponent = ctx.message.components[0].components[0]
-        await ctx.send(result.label, ephemeral=True)
+        """Triggers for calc 'result' button - sen."""
+        component: Button | BaseComponent = ctx.component
+        await ctx.send(f"{component.label}", ephemeral=True)
 
     @slash_command(name="counter")
     async def counter(self, ctx: SlashContext) -> None:
