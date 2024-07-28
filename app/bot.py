@@ -33,4 +33,5 @@ if __name__ == "__main__":
     bot.load_extension("features.dictionary")
     bot.load_extension("features.reminder")
     bot.load_extension("features.calculator")
+    bot.load_extension("features.calc_buttons")
     bot.start(token)

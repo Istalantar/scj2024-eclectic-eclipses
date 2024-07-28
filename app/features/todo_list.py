@@ -265,6 +265,8 @@ class TodoList(Extension):
                 await modal_ctx.edit(message=message, content="\n".join(todo_list))
             case "remove":
                 todo_list = await self._gui_remove(ctx.author.id, ctx.message.content.split("\n"))
+            case _:
+                return
 
         if not is_modal:
             # ctx is already acknowledged through modal usage for 'add'
