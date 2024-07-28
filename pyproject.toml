@@ -9,6 +9,7 @@ license = "MIT"
 python = "3.12.*"
 discord-py-interactions = "^5.13.1"
 aiosqlite = "^0.20.0"
+python-dotenv = "^1.0.1"
 
 [tool.poetry.dev-dependencies]
 ruff = "~0.5.0"
