@@ -45,15 +45,9 @@ class UnexpectedCalculationError(Exception):
 def calculate_root(base: float, exponent: float = 2) -> float:
     """Calculate the nth root of a number.
 
-    Args:
-    ----
-        base: The number to find the root of.
-        exponent: The root exponent. Defaults to 2 (square root).
-
-    Returns:
-    -------
-        The calculated root.
-
+    :param base: The number to find the root of.
+    :param exponent: The root exponent. Defaults to 2 (square root).
+    :return: The calculated root.
     """
     return base ** (1 / exponent)
 
@@ -61,15 +55,9 @@ def calculate_root(base: float, exponent: float = 2) -> float:
 def calculate_exponential(value: float, base: float = math.e) -> float:
     """Calculate the exponential of a value with a given base.
 
-    Args:
-    ----
-        value: The exponent.
-        base: The base. Defaults to e.
-
-    Returns:
-    -------
-        The calculated exponential.
-
+    :param value: The exponent.
+    :param base: The base. Defaults to e.
+    :return: The calculated exponential.
     """
     return base**value
 
@@ -77,15 +65,9 @@ def calculate_exponential(value: float, base: float = math.e) -> float:
 def calculate_logarithm(value: float, base: float = math.e) -> float:
     """Calculate the logarithm of a value with a given base.
 
-    Args:
-    ----
-        value: The value to calculate the logarithm of.
-        base: The logarithm base. Defaults to e (natural log).
-
-    Returns:
-    -------
-        The calculated logarithm.
-
+    :param value: The value to calculate the logarithm of.
+    :param base: The logarithm base. Defaults to e (natural log).
+    :return: The calculated logarithm.
     """
     return math.log(value) if base == math.e else math.log(value, base)
 
@@ -93,14 +75,8 @@ def calculate_logarithm(value: float, base: float = math.e) -> float:
 def calculate_secant(angle: float) -> float:
     """Calculate the secant of an angle.
 
-    Args:
-    ----
-        angle: The angle in radians.
-
-    Returns:
-    -------
-        The secant of the angle.
-
+    :param angle: The angle in radians.
+    :return: The secant of the angle.
     """
     return 1 / math.cos(angle)
 
@@ -108,14 +84,8 @@ def calculate_secant(angle: float) -> float:
 def calculate_cosecant(angle: float) -> float:
     """Calculate the cosecant of an angle.
 
-    Args:
-    ----
-        angle: The angle in radians.
-
-    Returns:
-    -------
-        The cosecant of the angle.
-
+    :param angle: The angle in radians.
+    :return: The cosecant of the angle.
     """
     return 1 / math.sin(angle)
 
@@ -123,14 +93,8 @@ def calculate_cosecant(angle: float) -> float:
 def calculate_cotangent(angle: float) -> float:
     """Calculate the cotangent of an angle.
 
-    Args:
-    ----
-        angle: The angle in radians.
-
-    Returns:
-    -------
-        The cotangent of the angle.
-
+    :param angle: The angle in radians.
+    :return: The cotangent of the angle.
     """
     return 1 / math.tan(angle)
 
@@ -138,18 +102,9 @@ def calculate_cotangent(angle: float) -> float:
 def calculate_factorial(number: int) -> int:
     """Calculate the factorial of a number.
 
-    Args:
-    ----
-        number: The number to calculate the factorial of.
-
-    Returns:
-    -------
-        The factorial of the number.
-
-    Raises:
-    ------
-        CalculationError: If the number is not a non-negative integer.
-
+    :param number: The number to calculate the factorial of.
+    :return: The factorial of the number.
+    :raises CalculationError: If the number is not a non-negative integer.
     """
     if not isinstance(number, int) or number < 0:
         error_message = "Factorial is only defined for non-negative integers."
@@ -212,14 +167,8 @@ TOLERANCE = 1e-10
 def preprocess_expression(expression: str) -> str:
     """Preprocess the mathematical expression to handle various input formats.
 
-    Args:
-    ----
-        expression: The input mathematical expression.
-
-    Returns:
-    -------
-        The preprocessed expression.
-
+    :param expression: The input mathematical expression.
+    :return: The preprocessed expression.
     """
     expression = expression.replace("^", "**").replace(" ", "")
     expression = re.sub(r"fact\(", "factorial(", expression)
@@ -238,14 +187,8 @@ def preprocess_expression(expression: str) -> str:
 def check_for_complex_numbers(expression: str) -> None:
     """Check if the expression contains complex numbers.
 
-    Args:
-    ----
-        expression: The input mathematical expression.
-
-    Raises:
-    ------
-        CalculationError: If the expression contains complex numbers.
-
+    :param expression: The input mathematical expression.
+    :raises CalculationError: If the expression contains complex numbers.
     """
     try:
         tree = ast.parse(expression, mode="eval")
@@ -270,18 +213,9 @@ def check_for_complex_numbers(expression: str) -> None:
 def evaluate_expression(expression: str) -> float:
     """Evaluate a mathematical expression.
 
-    Args:
-    ----
-        expression: The mathematical expression to evaluate.
-
-    Returns:
-    -------
-        The result of the evaluation.
-
-    Raises:
-    ------
-        CalculationError: If there's an error during the evaluation.
-
+    :param expression: The mathematical expression to evaluate.
+    :return: The result of the evaluation.
+    :raises CalculationError: If there's an error during the evaluation.
     """
     try:
         preprocessed_expression = preprocess_expression(expression)
@@ -333,18 +267,9 @@ def smart_round(value: float, decimals: int = 10) -> float:
 def evaluate_binary_operation(node: ast.BinOp) -> float:
     """Evaluate binary operations in the AST.
 
-    Args:
-    ----
-        node: The binary operation node.
-
-    Returns:
-    -------
-        The result of the binary operation.
-
-    Raises:
-    ------
-        CalculationError: If the operator is not allowed.
-
+    :param node: The binary operation node.
+    :return: The result of the binary operation.
+    :raises CalculationError: If the operator is not allowed.
     """
     left = evaluate_node(node.left)
     right = evaluate_node(node.right)
@@ -361,18 +286,9 @@ def evaluate_binary_operation(node: ast.BinOp) -> float:
 def evaluate_unary_operation(node: ast.UnaryOp) -> float:
     """Evaluate unary operations in the AST.
 
-    Args:
-    ----
-        node: The unary operation node.
-
-    Returns:
-    -------
-        The result of the unary operation.
-
-    Raises:
-    ------
-        CalculationError: If the operator is not allowed.
-
+    :param node: The unary operation node.
+    :return: The result of the unary operation.
+    :raises CalculationError: If the operator is not allowed.
     """
     operand = evaluate_node(node.operand)
     operator_type = type(node.op)
@@ -385,18 +301,9 @@ def evaluate_unary_operation(node: ast.UnaryOp) -> float:
 def evaluate_function_call(node: ast.Call) -> float:
     """Evaluate function calls in the AST.
 
-    Args:
-    ----
-        node: The function call node.
-
-    Returns:
-    -------
-        The result of the function call.
-
-    Raises:
-    ------
-        CalculationError: If the function is not allowed.
-
+    :param node: The function call node.
+    :return: The result of the function call.
+    :raises CalculationError: If the function is not allowed.
     """
     function_name = node.func.id
     if function_name in ALLOWED_FUNCTIONS:
@@ -409,18 +316,9 @@ def evaluate_function_call(node: ast.Call) -> float:
 def evaluate_node(node: ast.BinOp | ast.UnaryOp | ast.Constant | ast.Name | ast.Call | ast.Expression) -> float:
     """Recursively evaluate an AST node.
 
-    Args:
-    ----
-        node: The AST node to evaluate.
-
-    Returns:
-    -------
-        The result of the node evaluation.
-
-    Raises:
-    ------
-        CalculationError: If the node type is not supported.
-
+    :param node: The AST node to evaluate.
+    :return: The result of the node evaluation.
+    :raises CalculationError: If the node type is not supported.
     """
     if isinstance(node, ast.BinOp):
         result = evaluate_binary_operation(node)

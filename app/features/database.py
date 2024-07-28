@@ -46,7 +46,13 @@ class Database(Extension):
         await self.bot.db_conn.commit()
 
     async def todo_add(self, user_id: int, item: str, category: str | None = None) -> bool:
-        """Add item to to-do table."""
+        """Add item to to-do table.
+
+        :param user_id: Discord user id.
+        :param item: To be added ToDo.
+        :param category: (optional) Category of the item.
+        :return: True if query succeeded, False otherwise.
+        """
         async with self.bot.db_conn.cursor() as cursor:
             query = """INSERT INTO todo (user_id, category, item) VALUES (?,?,?)"""
             try:
@@ -57,7 +63,12 @@ class Database(Extension):
         return True
 
     async def todo_remove(self, user_id: int, item: str) -> bool:
-        """Remove item from to-do table."""
+        """Remove item from to-do table.
+
+        :param user_id: Discord user id.
+        :param item: To be removed ToDo.
+        :return: True if query succeeded, False otherwise.
+        """
         async with self.bot.db_conn.cursor() as cursor:
             query = """DELETE from todo WHERE item = ? AND user_id = ?"""
             try:
@@ -68,7 +79,12 @@ class Database(Extension):
         return True
 
     async def todo_remove_category(self, user_id: int, category: str) -> bool:
-        """Remove an entire category of items from the to-do table."""
+        """Remove an entire category of items from the to-do table.
+
+        :param user_id: Discord user id.
+        :param category: To be removed Category.
+        :return: True if query succeeded, False otherwise.
+        """
         query = """DELETE from todo WHERE user_id = ? AND category = ?"""
         async with self.bot.db_conn.cursor() as cursor:
             try:
@@ -79,7 +95,12 @@ class Database(Extension):
         return True
 
     async def todo_listall(self, user_id: int, category: str | None = None) -> list[tuple[str]]:
-        """Fetch all the users items from the to-do table."""
+        """Fetch all the users items from the to-do table.
+
+        :param user_id: Discord user id.
+        :param category: (optional) Category of the item.
+        :return: List of the users ToDos.
+        """
         async with self.bot.db_conn.cursor() as cursor:
             if category:
                 query = """SELECT item FROM todo WHERE user_id = ? AND category = ?"""
@@ -114,7 +135,11 @@ class Database(Extension):
             return await cur.fetchall()
 
     async def set_timezone(self, user_id: int, tz: str) -> None:
-        """Add users timezone to db."""
+        """Add or update users timezone to db.
+
+        :param user_id: Discord user id.
+        :param tz: IANA timezone name.
+        """
         async with self.bot.db_conn.cursor() as cursor:
             query = """SELECT * from timezone WHERE user_id = ?"""
             ret = await cursor.execute(query, (user_id,))

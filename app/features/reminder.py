@@ -168,10 +168,8 @@ def get_timezone_strings() -> list[str]:
 def seconds_until_time(target_datetime: datetime.datetime) -> float:
     """Calculate seconds until a specific time is reached, considering timezones.
 
-    Returns
-    -------
-        Float representing the number of seconds until the target time is reached.
-
+    :param target_datetime: Datetime to calculate seconds until.
+    :return: Float representing the number of seconds until the target time is reached.
     """
     timezone_obj = target_datetime.tzinfo
     local_dt_now = datetime.datetime.now(timezone_obj)
@@ -188,13 +186,25 @@ class UserTimezones:
         self.timezones = dict(db_timezones)
 
     def add_user(self, user_id: int, timezone: str) -> None:
-        """Add user to dict."""
+        """Add user to dict.
+
+        :param user_id: Discord user ID.
+        :param timezone: Timzone in IANA format.
+        """
         self.timezones[user_id] = timezone
 
     def has_user(self, user_id: int) -> bool:
-        """Check if user is in dict."""
+        """Check if user is in dict.
+
+        :param user_id: Discord user ID.
+        :return: True if user has a saved timezone, else False.
+        """
         return user_id in self.timezones
 
     def get_timezone(self, user_id: int) -> str:
-        """Return timezone information for user_id key."""
+        """Return timezone information for user_id key.
+
+        :param user_id: Discord user ID.
+        :return: Users timezone in IANA format.
+        """
         return self.timezones[user_id]
