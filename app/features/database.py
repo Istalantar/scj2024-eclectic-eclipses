@@ -1,6 +1,6 @@
 import aiosqlite
 from interactions import Extension, listen
-from interactions.api import events
+from interactions.api.events import Connect, Disconnect
 
 
 class Database(Extension):
@@ -18,15 +18,15 @@ class Database(Extension):
         await self.todo_table()
         await self.timezone_table()
 
-    @listen(events.Connect)
-    async def bot_connect(self, event: events.Connect) -> None:
+    @listen(Connect)
+    async def bot_connect(self, event: Connect) -> None:
         """Reconnect to db when the bot reconnects."""
         print(event)
         if not self.bot.db_conn:
             self.bot.db_conn = await aiosqlite.connect("./ee.db")
 
-    @listen(events.Disconnect)
-    async def bot_disconnect(self, event: events.Disconnect) -> None:
+    @listen(Disconnect)
+    async def bot_disconnect(self, event: Disconnect) -> None:
         """Disconnect the db when the bot disconnects."""
         print(event)
         await self.bot.db_conn.close()

@@ -14,7 +14,16 @@ import operator
 import re
 from fractions import Fraction
 
-import interactions
+from interactions import (
+    Client,
+    Embed,
+    Extension,
+    OptionType,
+    SlashCommandOption,
+    SlashContext,
+    slash_command,
+    slash_option,
+)
 
 
 class CalculationError(Exception):
@@ -435,28 +444,28 @@ def evaluate_node(node: ast.BinOp | ast.UnaryOp | ast.Constant | ast.Name | ast.
     return result
 
 
-class Calculator(interactions.Extension):
+class Calculator(Extension):
     """Calculator extension."""
 
-    def __init__(self, bot: interactions.Client) -> None:
+    def __init__(self, bot: Client) -> None:
         self.bot = bot
         print("Calculator extension loaded")
 
-    @interactions.slash_command(
+    @slash_command(
         name="calculate",
         description="Calculate a mathematical expression",
         options=[
-            interactions.SlashCommandOption(
+            SlashCommandOption(
                 name="expression",
                 description="The mathematical expression to calculate",
                 required=True,
-                type=interactions.OptionType.STRING,
+                type=OptionType.STRING,
             ),
         ],
     )
     async def calculate_expression(
         self,
-        ctx: interactions.SlashContext,
+        ctx: SlashContext,
         expression: str,
     ) -> None:
         """Calculate the given mathematical expression."""
@@ -470,18 +479,18 @@ class Calculator(interactions.Extension):
         except UnexpectedCalculationError as unexpected_error:
             await ctx.send(f"An unexpected error occurred: {unexpected_error}", ephemeral=True)
 
-    @interactions.slash_command(name="calc", description="Calculator functions")
-    async def calc(self, ctx: interactions.SlashContext) -> None:
+    @slash_command(name="calc", description="Calculator functions")
+    async def calc(self, ctx: SlashContext) -> None:
         """Provide base command for calculator functions."""
 
     @calc.subcommand(sub_cmd_name="sqrt", sub_cmd_description="Calculate the square root")
-    @interactions.slash_option(
+    @slash_option(
         name="x",
         description="Number to calculate the square root of",
         required=True,
-        opt_type=interactions.OptionType.STRING,
+        opt_type=OptionType.STRING,
     )
-    async def calc_sqrt(self, ctx: interactions.SlashContext, x: str) -> None:
+    async def calc_sqrt(self, ctx: SlashContext, x: str) -> None:
         """Calculate the square root of a number."""
         try:
             expression = f"sqrt({x})"
@@ -491,19 +500,19 @@ class Calculator(interactions.Extension):
             await ctx.send(f"An error occurred: {e!s}", ephemeral=True)
 
     @calc.subcommand(sub_cmd_name="root", sub_cmd_description="Calculate the nth root of a number")
-    @interactions.slash_option(
+    @slash_option(
         name="x",
         description="The number to find the root of",
         required=True,
-        opt_type=interactions.OptionType.STRING,
+        opt_type=OptionType.STRING,
     )
-    @interactions.slash_option(
+    @slash_option(
         name="n",
         description="The root exponent",
         required=True,
-        opt_type=interactions.OptionType.STRING,
+        opt_type=OptionType.STRING,
     )
-    async def calc_root(self, ctx: interactions.SlashContext, x: str, n: str) -> None:
+    async def calc_root(self, ctx: SlashContext, x: str, n: str) -> None:
         """Calculate the nth root of a number."""
         try:
             expression = f"root({x},{n})"
@@ -513,13 +522,13 @@ class Calculator(interactions.Extension):
             await ctx.send(f"An error occurred: {e!s}", ephemeral=True)
 
     @calc.subcommand(sub_cmd_name="ln", sub_cmd_description="Calculate the natural logarithm")
-    @interactions.slash_option(
+    @slash_option(
         name="x",
         description="The number to calculate the natural logarithm of",
         required=True,
-        opt_type=interactions.OptionType.STRING,
+        opt_type=OptionType.STRING,
     )
-    async def calc_ln(self, ctx: interactions.SlashContext, x: str) -> None:
+    async def calc_ln(self, ctx: SlashContext, x: str) -> None:
         """Calculate the natural logarithm of a number."""
         try:
             expression = f"ln({x})"
@@ -529,19 +538,19 @@ class Calculator(interactions.Extension):
             await ctx.send(f"An error occurred: {e!s}", ephemeral=True)
 
     @calc.subcommand(sub_cmd_name="log", sub_cmd_description="Calculate the logarithm with a specified base")
-    @interactions.slash_option(
+    @slash_option(
         name="x",
         description="The number to calculate the logarithm of",
         required=True,
-        opt_type=interactions.OptionType.STRING,
+        opt_type=OptionType.STRING,
     )
-    @interactions.slash_option(
+    @slash_option(
         name="base",
         description="The base of the logarithm",
         required=True,
-        opt_type=interactions.OptionType.STRING,
+        opt_type=OptionType.STRING,
     )
-    async def calc_log(self, ctx: interactions.SlashContext, x: str, base: str) -> None:
+    async def calc_log(self, ctx: SlashContext, x: str, base: str) -> None:
         """Calculate the logarithm of a number with a specified base."""
         try:
             expression = f"log({x},{base})"
@@ -551,13 +560,13 @@ class Calculator(interactions.Extension):
             await ctx.send(f"An error occurred: {e!s}", ephemeral=True)
 
     @calc.subcommand(sub_cmd_name="exp", sub_cmd_description="Calculate the exponential of a number")
-    @interactions.slash_option(
+    @slash_option(
         name="x",
         description="The exponent",
         required=True,
-        opt_type=interactions.OptionType.STRING,
+        opt_type=OptionType.STRING,
     )
-    async def calc_exp(self, ctx: interactions.SlashContext, x: str) -> None:
+    async def calc_exp(self, ctx: SlashContext, x: str) -> None:
         """Calculate the exponential of a number."""
         try:
             expression = f"exp({x})"
@@ -567,13 +576,13 @@ class Calculator(interactions.Extension):
             await ctx.send(f"An error occurred: {e!s}", ephemeral=True)
 
     @calc.subcommand(sub_cmd_name="fact", sub_cmd_description="Calculate the factorial of a number")
-    @interactions.slash_option(
+    @slash_option(
         name="x",
         description="The number to calculate factorial",
         required=True,
-        opt_type=interactions.OptionType.STRING,
+        opt_type=OptionType.STRING,
     )
-    async def calc_fact(self, ctx: interactions.SlashContext, x: str) -> None:
+    async def calc_fact(self, ctx: SlashContext, x: str) -> None:
         """Calculate the factorial of a number."""
         try:
             expression = f"factorial({x})"
@@ -583,13 +592,13 @@ class Calculator(interactions.Extension):
             await ctx.send(f"An error occurred: {e!s}", ephemeral=True)
 
     @calc.subcommand(sub_cmd_name="rad", sub_cmd_description="Convert a degree value into radians")
-    @interactions.slash_option(
+    @slash_option(
         name="x",
         description="Angle in degree",
         required=True,
-        opt_type=interactions.OptionType.STRING,
+        opt_type=OptionType.STRING,
     )
-    async def calc_rad(self, ctx: interactions.SlashContext, x: str) -> None:
+    async def calc_rad(self, ctx: SlashContext, x: str) -> None:
         """Convert a degree value into radians."""
         try:
             expression = f"radians({x})"
@@ -600,13 +609,13 @@ class Calculator(interactions.Extension):
             await ctx.send(f"An error occurred: {e!s}", ephemeral=True)
 
     @calc.subcommand(sub_cmd_name="deg", sub_cmd_description="Convert a radians value into degrees")
-    @interactions.slash_option(
+    @slash_option(
         name="x",
         description="Angle in radians",
         required=True,
-        opt_type=interactions.OptionType.STRING,
+        opt_type=OptionType.STRING,
     )
-    async def calc_deg(self, ctx: interactions.SlashContext, x: str) -> None:
+    async def calc_deg(self, ctx: SlashContext, x: str) -> None:
         """Convert a radians value into degrees."""
         try:
             expression = f"degrees({x})"
@@ -615,29 +624,29 @@ class Calculator(interactions.Extension):
         except (CalculationError, ValueError, TypeError) as e:
             await ctx.send(f"An error occurred: {e!s}", ephemeral=True)
 
-    @interactions.slash_command(name="calc_trig", description="Trigonometric functions")
-    async def calc_trig(self, ctx: interactions.SlashContext) -> None:
+    @slash_command(name="calc_trig", description="Trigonometric functions")
+    async def calc_trig(self, ctx: SlashContext) -> None:
         """Provide base command for trigonometric functions."""
 
     @calc_trig.subcommand(sub_cmd_name="basic", sub_cmd_description="Basic trigonometric functions")
-    @interactions.slash_option(
+    @slash_option(
         name="function",
         description="Choose the trigonometric function",
         required=True,
-        opt_type=interactions.OptionType.STRING,
+        opt_type=OptionType.STRING,
         choices=[
             {"name": "sin", "value": "sin"},
             {"name": "cos", "value": "cos"},
             {"name": "tan", "value": "tan"},
         ],
     )
-    @interactions.slash_option(
+    @slash_option(
         name="angle",
         description="Angle in radians",
         required=True,
-        opt_type=interactions.OptionType.STRING,
+        opt_type=OptionType.STRING,
     )
-    async def trig_basic(self, ctx: interactions.SlashContext, function: str, angle: str) -> None:
+    async def trig_basic(self, ctx: SlashContext, function: str, angle: str) -> None:
         """Calculate basic trigonometric functions."""
         try:
             expression = f"{function}({angle})"
@@ -647,24 +656,24 @@ class Calculator(interactions.Extension):
             await ctx.send(f"An error occurred: {e!s}", ephemeral=True)
 
     @calc_trig.subcommand(sub_cmd_name="hyperbolic", sub_cmd_description="Hyperbolic trigonometric functions")
-    @interactions.slash_option(
+    @slash_option(
         name="function",
         description="Choose the hyperbolic trigonometric function",
         required=True,
-        opt_type=interactions.OptionType.STRING,
+        opt_type=OptionType.STRING,
         choices=[
             {"name": "sinh", "value": "sinh"},
             {"name": "cosh", "value": "cosh"},
             {"name": "tanh", "value": "tanh"},
         ],
     )
-    @interactions.slash_option(
+    @slash_option(
         name="value",
         description="Input value",
         required=True,
-        opt_type=interactions.OptionType.STRING,
+        opt_type=OptionType.STRING,
     )
-    async def trig_hyperbolic(self, ctx: interactions.SlashContext, function: str, value: str) -> None:
+    async def trig_hyperbolic(self, ctx: SlashContext, function: str, value: str) -> None:
         """Calculate hyperbolic trigonometric functions."""
         try:
             expression = f"{function}({value})"
@@ -674,11 +683,11 @@ class Calculator(interactions.Extension):
             await ctx.send(f"An error occurred: {e!s}", ephemeral=True)
 
     @calc_trig.subcommand(sub_cmd_name="inverse", sub_cmd_description="Inverse trigonometric functions")
-    @interactions.slash_option(
+    @slash_option(
         name="function",
         description="Choose the inverse of basic and hyperbolic trigonometric function",
         required=True,
-        opt_type=interactions.OptionType.STRING,
+        opt_type=OptionType.STRING,
         choices=[
             {"name": "asin", "value": "asin"},
             {"name": "acos", "value": "acos"},
@@ -688,13 +697,13 @@ class Calculator(interactions.Extension):
             {"name": "atanh", "value": "atanh"},
         ],
     )
-    @interactions.slash_option(
+    @slash_option(
         name="value",
         description="Input value",
         required=True,
-        opt_type=interactions.OptionType.STRING,
+        opt_type=OptionType.STRING,
     )
-    async def trig_inverse(self, ctx: interactions.SlashContext, function: str, value: str) -> None:
+    async def trig_inverse(self, ctx: SlashContext, function: str, value: str) -> None:
         """Calculate inverse trigonometric functions."""
         try:
             expression = f"{function}({value})"
@@ -704,24 +713,24 @@ class Calculator(interactions.Extension):
             await ctx.send(f"An error occurred: {e!s}", ephemeral=True)
 
     @calc_trig.subcommand(sub_cmd_name="other", sub_cmd_description="Other trigonometric functions")
-    @interactions.slash_option(
+    @slash_option(
         name="function",
         description="Choose the trigonometric function",
         required=True,
-        opt_type=interactions.OptionType.STRING,
+        opt_type=OptionType.STRING,
         choices=[
             {"name": "sec", "value": "sec"},
             {"name": "csc", "value": "csc"},
             {"name": "cot", "value": "cot"},
         ],
     )
-    @interactions.slash_option(
+    @slash_option(
         name="angle",
         description="Angle in radians",
         required=True,
-        opt_type=interactions.OptionType.STRING,
+        opt_type=OptionType.STRING,
     )
-    async def trig_other(self, ctx: interactions.SlashContext, function: str, angle: str) -> None:
+    async def trig_other(self, ctx: SlashContext, function: str, angle: str) -> None:
         """Calculate other trigonometric functions."""
         try:
             expression = f"{function}({angle})"
@@ -730,11 +739,11 @@ class Calculator(interactions.Extension):
         except (CalculationError, ValueError, TypeError) as e:
             await ctx.send(f"An error occurred: {e!s}", ephemeral=True)
 
-    @interactions.slash_command(
+    @slash_command(
         name="calc_info",
         description="Get information about the calculator",
     )
-    async def calculate_info(self, ctx: interactions.SlashContext) -> None:
+    async def calculate_info(self, ctx: SlashContext) -> None:
         """Provide information about allowed functions, constants, and operators."""
         functions_info = [
             "`sqrt(x)` - square root of x",
@@ -769,7 +778,7 @@ class Calculator(interactions.Extension):
             "`//` (floor division)",
         ]
 
-        embed = interactions.Embed(
+        embed = Embed(
             title="Calculator Information",
             description="Here is the list of allowed functions, constants, and operators for the calculator.",
             color=0x1E1F22,
@@ -786,8 +795,8 @@ class Calculator(interactions.Extension):
 
         await ctx.send(embeds=[embed], ephemeral=True)
 
-    @interactions.slash_command(name="calc_help", description="Get a list of available calculator commands")
-    async def calc_help(self, ctx: interactions.SlashContext) -> None:
+    @slash_command(name="calc_help", description="Get a list of available calculator commands")
+    async def calc_help(self, ctx: SlashContext) -> None:
         """Provide a list of available calculator commands."""
         commands_info = [
             "`/calc_help` - Get a list of available calculator commands",
@@ -812,7 +821,7 @@ class Calculator(interactions.Extension):
             "`/calc_trig other [function] [angle]` - Calculate other trigonometric functions",
         ]
 
-        embed = interactions.Embed(
+        embed = Embed(
             title="Calculator Commands",
             description="Here is the list of available calculator commands.",
             color=0x1E1F22,
@@ -824,6 +833,6 @@ class Calculator(interactions.Extension):
         await ctx.send(embeds=[embed], ephemeral=True)
 
 
-def setup(bot: interactions.Client) -> None:
+def setup(bot: Client) -> None:
     """Set up the Calculator extension."""
     Calculator(bot)
