@@ -1,35 +1,38 @@
 import re
 
-from interactions import Button, Extension, SlashContext, component_callback, slash_command
+from interactions import Button, ButtonStyle, Extension, SlashContext, component_callback, slash_command
 from interactions.models.discord.components import ActionRow, BaseComponent
 from interactions.models.internal.context import ComponentContext
+
+from .calculator import CalculationError, evaluate_expression
 
 buttons = [
     ActionRow(
         Button(style=1, label="0", custom_id="result"),
         Button(label="<", style=3, custom_id="<", disabled=True),
         Button(label=">", style=3, custom_id=">"),
+        Button(label="<", style=4, custom_id="calc_back"),
     ),
 ]
 buttons += [
     ActionRow(
-        *(Button(label=f"{i}", custom_id=f"{i}", style=2) for i in range(7, 10)),
+        *(Button(label=f"{i}", custom_id=f"calc_{i}", style=2) for i in range(7, 10)),
         Button(label="+", style=1, custom_id="calc_+"),
         Button(label="-", style=1, custom_id="calc_-"),
     ),
 ]
 buttons += [
     ActionRow(
-        *(Button(label=f"{i}", custom_id=f"{i}", style=2) for i in range(4, 7)),
+        *(Button(label=f"{i}", custom_id=f"calc_{i}", style=2) for i in range(4, 7)),
         Button(label="*", style=1, custom_id="calc_*"),
         Button(label="/", style=1, custom_id="calc_/"),
     ),
 ]
-buttons += [ActionRow(*(Button(label=f"{i}", custom_id=f"{i}", style=2) for i in range(1, 4)))]
+buttons += [ActionRow(*(Button(label=f"{i}", custom_id=f"calc_{i}", style=2) for i in range(1, 4)))]
 buttons += [
     ActionRow(
         Button(label=".", style=2, custom_id="calc_."),
-        Button(label="0", custom_id="0", style=2),
+        Button(label="0", custom_id="calc_0", style=2),
         Button(label="=", style=3, custom_id="calc_="),
     ),
 ]
@@ -54,16 +57,6 @@ class ButtonCalc(Extension):
     async def calc_gui(self, ctx: SlashContext) -> None:
         """Display Calculator."""
         await ctx.send(components=buttons, ephemeral=True)
-
-    @component_callback(re.compile(r"^[0-9]$"))
-    async def numbers_callback(self, ctx: ComponentContext) -> None:
-        """Triggers on calc number buttons."""
-        await ctx.defer(edit_origin=True, suppress_error=True)
-        components = ctx.message.components
-        a_r: ActionRow = components[0]
-        label_button: BaseComponent = a_r.components[0]
-        label_button.label = int(label_button.label) + int(ctx.custom_id)
-        await ctx.edit_origin(components=components, content=f'`{ctx.message.content.strip("`") + ctx.custom_id}`')
 
     @component_callback(re.compile(r"^[<>]$"))
     async def pagination_callback(self, ctx: ComponentContext) -> None:
@@ -94,12 +87,30 @@ class ButtonCalc(Extension):
     async def callback_for_calc_buttons(self, ctx: ComponentContext) -> None:
         """Triggers for calc text buttons."""
         await ctx.defer(edit_origin=True)
+        components = ctx.message.components
+        a_r: ActionRow = components[0]
+        label_button: BaseComponent = a_r.components[0]
+        content = ctx.message.content.strip("` ")
         match ctx.custom_id:
             case "calc_=":
-                # TODO: parse string
-                await ctx.send(f"Result {ctx.message.content}", ephemeral=True)
-                return
-        await ctx.edit_origin(content=f'`{ctx.message.content.strip("`") + ctx.custom_id.split('_')[1]}`')
+                try:
+                    calculation = evaluate_expression(ctx.message.content.strip("`"))
+                    label_button.style = ButtonStyle.BLURPLE
+                    label_button.label = f"{calculation}"
+                    content = ""
+                except CalculationError:
+                    label_button.style = ButtonStyle.RED
+                    label_button.label = "ERR"
+                await ctx.edit_origin(components=components, content=content)
+            case "calc_back":
+                if content:
+                    await ctx.edit_origin(content=f'`{content[:-1] or " "}`')
+            case _:
+                if content and label_button.style == ButtonStyle.RED:
+                    label_button.style = ButtonStyle.BLURPLE
+                    label_button.label = "0"
+                    await ctx.edit_origin(components=components)
+                await ctx.edit_origin(content=f"`{content + ctx.custom_id.split('_')[1]}`")
 
     @component_callback("result")
     async def result_callback(self, ctx: ComponentContext) -> None:
