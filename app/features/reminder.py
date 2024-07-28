@@ -22,7 +22,6 @@ class Reminder(Extension):
 
     def __init__(self, bot: Client) -> None:
         self.bot = bot
-        print("Reminder extension loaded")
         self.tz = None
 
     @listen(Ready)

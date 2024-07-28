@@ -347,7 +347,6 @@ class Calculator(Extension):
 
     def __init__(self, bot: Client) -> None:
         self.bot = bot
-        print("Calculator extension loaded")
 
     @slash_command(
         name="calculate",

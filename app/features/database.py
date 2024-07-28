@@ -10,7 +10,6 @@ class Database(Extension):
         """Connect to db as bot loops starts."""
         self.bot.db = self
         self.bot.db_conn = await aiosqlite.connect("./ee.db")
-        print("Database extension loaded")
         await self.populate_tables()
 
     async def populate_tables(self) -> None:
