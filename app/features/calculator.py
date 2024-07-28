@@ -19,6 +19,7 @@ from interactions import (
     Embed,
     Extension,
     OptionType,
+    SlashCommand,
     SlashCommandOption,
     SlashContext,
     slash_command,
@@ -345,6 +346,9 @@ def evaluate_node(node: ast.BinOp | ast.UnaryOp | ast.Constant | ast.Name | ast.
 class Calculator(Extension):
     """Calculator extension."""
 
+    calc = SlashCommand(name="calc", description="Calculator functions")
+    calc_trig = SlashCommand(name="calc_trig", description="Trigonometric functions")
+
     def __init__(self, bot: Client) -> None:
         self.bot = bot
 
@@ -375,10 +379,6 @@ class Calculator(Extension):
             await ctx.send(f"An error occurred: {specific_error}", ephemeral=True)
         except UnexpectedCalculationError as unexpected_error:
             await ctx.send(f"An unexpected error occurred: {unexpected_error}", ephemeral=True)
-
-    @slash_command(name="calc", description="Calculator functions")
-    async def calc(self, ctx: SlashContext) -> None:
-        """Provide base command for calculator functions."""
 
     @calc.subcommand(sub_cmd_name="sqrt", sub_cmd_description="Calculate the square root")
     @slash_option(
@@ -520,10 +520,6 @@ class Calculator(Extension):
             await ctx.send(f"{x} in degrees: {result}")
         except (CalculationError, ValueError, TypeError) as e:
             await ctx.send(f"An error occurred: {e!s}", ephemeral=True)
-
-    @slash_command(name="calc_trig", description="Trigonometric functions")
-    async def calc_trig(self, ctx: SlashContext) -> None:
-        """Provide base command for trigonometric functions."""
 
     @calc_trig.subcommand(sub_cmd_name="basic", sub_cmd_description="Basic trigonometric functions")
     @slash_option(

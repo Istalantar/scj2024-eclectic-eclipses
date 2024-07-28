@@ -9,10 +9,10 @@ from interactions import (
     ModalContext,
     OptionType,
     ShortText,
+    SlashCommand,
     SlashContext,
     listen,
     message_context_menu,
-    slash_command,
     slash_option,
 )
 from interactions.api.events import Component
@@ -20,6 +20,8 @@ from interactions.api.events import Component
 
 class TodoList(Extension):
     """Todo list extension."""
+
+    todo = SlashCommand(name="todo", description="Todo list")
 
     async def _get_todo_list(self, user_id: int) -> list[str]:
         """Get all todos for a user and return them as a numbere list.
@@ -154,20 +156,20 @@ class TodoList(Extension):
             todo_list[-1] = f"`{todo_list[-1]}`"
         return todo_list
 
-    @slash_command(name="todo", description="Todo list", sub_cmd_name="list", sub_cmd_description="Lists all todos")
+    @todo.subcommand(sub_cmd_name="list", sub_cmd_description="Lists all todos")
     async def todo_list(self, ctx: SlashContext) -> None:
         """List all saved todos."""
         todo_list = await self._get_todo_list(ctx.author.id)
         await ctx.send("\n".join(todo_list), ephemeral=True)
 
-    @slash_command(name="todo", description="Todo list", sub_cmd_name="add", sub_cmd_description="Adds a todo")
+    @todo.subcommand(sub_cmd_name="add", sub_cmd_description="Adds a todo")
     @slash_option(name="todo_msg", description="The ToDo you want to add", required=True, opt_type=OptionType.STRING)
     async def todo_add(self, ctx: SlashContext, todo_msg: str) -> None:
         """Add a new todo."""
         await self._add_todo(ctx.author.id, todo_msg)
         await ctx.send(f"``{todo_msg}`` added to todo list.", ephemeral=True)
 
-    @slash_command(name="todo", description="Todo list", sub_cmd_name="remove", sub_cmd_description="Removes a todo")
+    @todo.subcommand(sub_cmd_name="remove", sub_cmd_description="Removes a todo")
     @slash_option(
         name="todo_id",
         description="The number of the ToDo you want to remove",
@@ -192,12 +194,7 @@ class TodoList(Extension):
             await self._add_todo(ctx.author.id, todo_msg)
             await ctx.send(f"``{todo_msg}`` added to todo list.", ephemeral=True)
 
-    @slash_command(
-        name="todo",
-        description="Todo list",
-        sub_cmd_name="gui",
-        sub_cmd_description="Interact via buttons with the todo list",
-    )
+    @todo.subcommand(sub_cmd_name="gui", sub_cmd_description="Interact via buttons with the todo list")
     async def todo_gui(self, ctx: SlashContext) -> None:
         """Interact via buttons with the todo list."""
         components: list[ActionRow] = [

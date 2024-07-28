@@ -20,6 +20,9 @@ from interactions.api.events import Ready
 class Reminder(Extension):
     """Alarm / Reminder extension."""
 
+    base = SlashCommand(name="remindme", description="Alarm base group")
+    set = SlashCommand(name="set", description="Set base group")
+
     def __init__(self, bot: Client) -> None:
         self.bot = bot
         self.tz = None
@@ -29,9 +32,6 @@ class Reminder(Extension):
         """Retrieve timezone data when the bot is ready."""
         utz = await self.bot.db.get_timezones()
         self.tz = UserTimezones(utz)
-
-    base = SlashCommand(name="remindme", description="Alarm base group")
-    set = SlashCommand(name="set", description="Set base group")
 
     @base.subcommand(
         sub_cmd_name="at",
