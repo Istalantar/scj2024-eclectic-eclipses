@@ -1,5 +1,5 @@
 [tool.poetry]
-name = "scj2024-eclectic-eclipses"
+name = "eclectic-eclipses"
 version = "0.1.0"
 description = "Description"
 authors = ["Azargeth", "Istalantar", "Maxy", "Ryan", "Turtle"]
