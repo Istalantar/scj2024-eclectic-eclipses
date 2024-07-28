@@ -6,7 +6,7 @@ import interactions
 from interactions.api import events
 
 
-class Alarm(interactions.Extension):
+class Reminder(interactions.Extension):
     """Alarm / Reminder extension."""
 
     def __init__(self, bot: interactions.Client) -> None:
