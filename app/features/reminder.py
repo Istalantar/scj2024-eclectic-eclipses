@@ -11,7 +11,7 @@ class Alarm(interactions.Extension):
 
     def __init__(self, bot: interactions.Client) -> None:
         self.bot = bot
-        print(f"{self.bot.user} loaded alarm extension")
+        print("Reminder extension loaded")
         self.tz = None
 
     @interactions.listen(events.Ready)
@@ -134,7 +134,7 @@ class Alarm(interactions.Extension):
         """Set timezone based on user selection."""
         # timezone selected by the user from the autocomplete list
         self.tz.add_user(ctx.author.id, timezone)
-        await self.bot.db.add_timezone(ctx.author, timezone)
+        await self.bot.db.set_timezone(ctx.author.id, timezone)
         await ctx.send(f"timezone set to {timezone}")
 
     @set_timezone.autocomplete("timezone")

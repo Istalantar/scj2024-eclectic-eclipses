@@ -10,6 +10,7 @@ class Database(Extension):
         """Connect to db as bot loops starts."""
         self.bot.db = self
         self.bot.db_conn = await aiosqlite.connect("./ee.db")
+        print("Database extension loaded")
         await self.populate_tables()
 
     async def populate_tables(self) -> None:
@@ -112,9 +113,17 @@ class Database(Extension):
             cur = await cursor.execute("""SELECT * from timezone""")
             return await cur.fetchall()
 
-    async def add_timezone(self, user_id: int, tz: str) -> None:
+    async def set_timezone(self, user_id: int, tz: str) -> None:
         """Add users timezone to db."""
         async with self.bot.db_conn.cursor() as cursor:
-            query = """INSERT INTO timezone (user_id, tz) VALUES (?,?)"""
-            await cursor.execute(query, (user_id, tz))
+            query = """SELECT * from timezone WHERE user_id = ?"""
+            ret = await cursor.execute(query, (user_id,))
+            ret = await ret.fetchall()
+
+            if len(ret) == 0:
+                query = """INSERT INTO timezone (user_id, tz) VALUES (?,?)"""
+                await cursor.execute(query, (user_id, tz))
+            else:
+                query = """UPDATE timezone SET tz = ? WHERE user_id = ?"""
+                await cursor.execute(query, (tz, user_id))
         await self.bot.db_conn.commit()
