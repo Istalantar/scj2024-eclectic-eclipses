@@ -3,7 +3,7 @@ import os
 
 import aiohttp
 from dotenv import load_dotenv
-from interactions import Extension, OptionType, SlashContext, slash_command, slash_option
+from interactions import Colour, Embed, EmbedFooter, Extension, OptionType, SlashContext, slash_command, slash_option
 
 load_dotenv()
 DICTIONARY_KEY = os.getenv("DICTIONARY_KEY")
@@ -26,16 +26,19 @@ class Dictionary(Extension):
         """Provide a short definition of the word passed by User."""
         request_url = f"https://dictionaryapi.com/api/v3/references/collegiate/json/{search_word}?key={DICTIONARY_KEY}"
         async with aiohttp.ClientSession() as session, session.get(request_url) as response:
+            embed = Embed(title=search_word, footer=EmbedFooter(text="via DictionaryAPI.com"))
             try:
-                short_def = "\n"
                 text_content = await response.text()
                 json_content = json.loads(text_content)
+                embed.color = Colour.from_rgb(0, 255, 0)
                 for num, short_defs in enumerate(json_content[0]["shortdef"], start=1):
-                    short_def += f"{num} : {short_defs}\n"
+                    embed.add_field(name=f"{num}", value=short_defs, inline=True)
             except TypeError as e:
                 print(f"Could not find short definition of {search_word} : Exception {e}")
                 short_def = "We could not find the meaning of this word in the dictionary"
                 if json_content:
                     short_def += "\nDid you mean any of these ? "
                     short_def += ", ".join(json_content)
-            await ctx.send(f"{search_word} : {short_def}")
+                    embed.color = Colour.from_rgb(255, 0, 0)
+                    embed.description = short_def
+            await ctx.send(embed=embed, ephemeral=True)
