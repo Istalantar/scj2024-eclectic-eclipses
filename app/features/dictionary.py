@@ -26,7 +26,18 @@ class Dictionary(Extension):
         """Provide a short definition of the word passed by User."""
         request_url = f"https://dictionaryapi.com/api/v3/references/collegiate/json/{search_word}?key={DICTIONARY_KEY}"
         async with aiohttp.ClientSession() as session, session.get(request_url) as response:
-            embed = Embed(title=search_word, footer=EmbedFooter(text="via DictionaryAPI.com"))
+            embed = Embed(
+                title=search_word,
+                footer=EmbedFooter(
+                    text="via DictionaryAPI.com",
+                    icon_url="https://upload.wikimedia.org/wikipedia/commons/thumb/3/32/"
+                    "Merriam-Webster_logo.svg/50px-Merriam-Webster_logo.svg.png",
+                ),
+            )
+            embed.add_image(
+                "https://upload.wikimedia.org/wikipedia/commons/thumb/3/32/"
+                "Merriam-Webster_logo.svg/100px-Merriam-Webster_logo.svg.png"
+            )
             try:
                 text_content = await response.text()
                 json_content = json.loads(text_content)
