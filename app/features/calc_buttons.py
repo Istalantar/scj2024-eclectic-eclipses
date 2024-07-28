@@ -45,8 +45,13 @@ mathfunctions = [
 class ButtonCalc(Extension):
     """Discord Calculator Widget Extension via Button Interactions."""
 
-    @slash_command()
-    async def calc(self, ctx: SlashContext) -> None:
+    @slash_command(
+        name="calc",
+        description="Calculator functions",
+        sub_cmd_name="gui",
+        sub_cmd_description="Calculate a number via buttons",
+    )
+    async def calc_gui(self, ctx: SlashContext) -> None:
         """Display Calculator."""
         await ctx.send(components=buttons, ephemeral=True)
 
