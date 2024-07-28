@@ -190,6 +190,8 @@ class TodoList(Extension):
         todo_msg = message.content
         if "\n" in todo_msg:
             await ctx.send("Only single line messages can be added as todo.", ephemeral=True)
+        elif len(todo_msg) == 0:
+            await ctx.send("Empty string. ToDo was not added.", ephemeral=True)
         else:
             await self._add_todo(ctx.author.id, todo_msg)
             await ctx.send(f"``{todo_msg}`` added to todo list.", ephemeral=True)
