@@ -15,9 +15,8 @@ bot = Client(intents=Intents.DEFAULT)
 
 @listen(Ready)
 async def on_ready() -> None:
-    """Doc string here."""
-    print("Ready")
-    print(f"This bot is owned by {bot.owner}")
+    """Listen to ready event."""
+    print("Helper Bot is ready.")
 
 
 if __name__ == "__main__":

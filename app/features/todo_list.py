@@ -9,10 +9,10 @@ from interactions import (
     ModalContext,
     OptionType,
     ShortText,
+    SlashCommand,
     SlashContext,
     listen,
     message_context_menu,
-    slash_command,
     slash_option,
 )
 from interactions.api.events import Component
@@ -21,8 +21,14 @@ from interactions.api.events import Component
 class TodoList(Extension):
     """Todo list extension."""
 
+    todo = SlashCommand(name="todo", description="Todo list")
+
     async def _get_todo_list(self, user_id: int) -> list[str]:
-        """Get all todos for a user and return them as a numbere list."""
+        """Get all todos for a user and return them as a numbere list.
+
+        :param user_id: Discord user ID.
+        :return: List of all the users todos.
+        """
         todos = await self.bot.db.todo_listall(user_id=user_id)
         ret = [f"{i}. {item[0]}" for i, item in enumerate(todos, start=1)]
         if len(ret) < 1:
@@ -30,18 +36,32 @@ class TodoList(Extension):
         return ret
 
     async def _add_todo(self, user_id: int, todo: str) -> None:
+        """Add a todo to the users list.
+
+        :param user_id: Discord user ID.
+        :param todo: Todo to add.
+        """
         await self.bot.db.todo_add(user_id=user_id, item=todo)
 
     async def _remove_todo(self, user_id: int, todo: str) -> str:
+        """Remove a todo from the users list.
+
+        :param user_id: Discord user ID.
+        :param todo: Todo to remove.
+        :return: The todo that was removed.
+        """
         start = todo.find(".") + 1
         todo = todo[start:].strip()
-        _, _, _, todo_item = await self.bot.db.todo_get_item(user_id=user_id, item=todo)
         await self.bot.db.todo_remove(user_id=user_id, item=todo)
-        return todo_item
+        return todo
 
     @staticmethod
     def _gui_move_top(todo_list: list[str]) -> list[str]:
-        """Move the highlight to the top of the todo list."""
+        """Move the highlight to the top of the todo list.
+
+        :param todo_list: List of todos.
+        :return: List with modified highlighting.
+        """
         for i, todo in enumerate(todo_list):
             if "`" in todo:
                 todo_list[i] = todo.replace("`", "")
@@ -51,7 +71,11 @@ class TodoList(Extension):
 
     @staticmethod
     def _gui_move_up(todo_list: list[str]) -> list[str]:
-        """Move the highlight to the previous todo."""
+        """Move the highlight to the previous todo.
+
+        :param todo_list: List of todos.
+        :return: List with modified highlighting.
+        """
         for i, todo in enumerate(todo_list):
             if "`" in todo:
                 todo_list[i] = todo.replace("`", "")
@@ -64,7 +88,11 @@ class TodoList(Extension):
 
     @staticmethod
     def _gui_move_down(todo_list: list[str]) -> list[str]:
-        """Move the highlight to the next todo."""
+        """Move the highlight to the next todo.
+
+        :param todo_list: List of todos.
+        :return: List with modified highlighting.
+        """
         for i, todo in enumerate(todo_list):
             if "`" in todo:
                 todo_list[i] = todo.replace("`", "")
@@ -77,7 +105,11 @@ class TodoList(Extension):
 
     @staticmethod
     def _gui_move_bottom(todo_list: list[str]) -> list[str]:
-        """Move the highlight to the bottom of the todo list."""
+        """Move the highlight to the bottom of the todo list.
+
+        :param todo_list: List of todos.
+        :return: List with modified highlighting.
+        """
         for i, todo in enumerate(todo_list):
             if "`" in todo:
                 todo_list[i] = todo.replace("`", "")
@@ -86,14 +118,24 @@ class TodoList(Extension):
         return todo_list
 
     async def _gui_add(self, user_id: int, todo: str) -> list[str]:
-        """Add a new todo and highlight the added todo."""
+        """Add a new todo and highlight the added todo.
+
+        :param user_id: Discord user ID.
+        :param todo: Todo to add.
+        :return: Updated todo list including updated highlighting.
+        """
         await self.bot.db.todo_add(user_id=user_id, item=todo)
         todo_list = await self._get_todo_list(user_id=user_id)
         todo_list[-1] = f"`{todo_list[-1]}`"
         return todo_list
 
     async def _gui_remove(self, user_id: int, todo_list: list[str]) -> list[str]:
-        """Remove the highlighted todo and highlight the next todo."""
+        """Remove the highlighted todo and highlight the next todo.
+
+        :param user_id: Discord user ID.
+        :param todo_list: Current todo list.
+        :return: Updated todo list including updated highlighting.
+        """
         todo_number = -1
         todo = ""
         for i, temp_todo in enumerate(todo_list):
@@ -114,20 +156,20 @@ class TodoList(Extension):
             todo_list[-1] = f"`{todo_list[-1]}`"
         return todo_list
 
-    @slash_command(name="todo", description="Todo list", sub_cmd_name="list", sub_cmd_description="Lists all todos")
+    @todo.subcommand(sub_cmd_name="list", sub_cmd_description="Lists all todos")
     async def todo_list(self, ctx: SlashContext) -> None:
         """List all saved todos."""
         todo_list = await self._get_todo_list(ctx.author.id)
         await ctx.send("\n".join(todo_list), ephemeral=True)
 
-    @slash_command(name="todo", description="Todo list", sub_cmd_name="add", sub_cmd_description="Adds a todo")
+    @todo.subcommand(sub_cmd_name="add", sub_cmd_description="Adds a todo")
     @slash_option(name="todo_msg", description="The ToDo you want to add", required=True, opt_type=OptionType.STRING)
     async def todo_add(self, ctx: SlashContext, todo_msg: str) -> None:
         """Add a new todo."""
         await self._add_todo(ctx.author.id, todo_msg)
         await ctx.send(f"``{todo_msg}`` added to todo list.", ephemeral=True)
 
-    @slash_command(name="todo", description="Todo list", sub_cmd_name="remove", sub_cmd_description="Removes a todo")
+    @todo.subcommand(sub_cmd_name="remove", sub_cmd_description="Removes a todo")
     @slash_option(
         name="todo_id",
         description="The number of the ToDo you want to remove",
@@ -148,16 +190,13 @@ class TodoList(Extension):
         todo_msg = message.content
         if "\n" in todo_msg:
             await ctx.send("Only single line messages can be added as todo.", ephemeral=True)
+        elif len(todo_msg) == 0:
+            await ctx.send("Empty string. ToDo was not added.", ephemeral=True)
         else:
             await self._add_todo(ctx.author.id, todo_msg)
             await ctx.send(f"``{todo_msg}`` added to todo list.", ephemeral=True)
 
-    @slash_command(
-        name="todo",
-        description="Todo list",
-        sub_cmd_name="gui",
-        sub_cmd_description="Interact via buttons with the todo list",
-    )
+    @todo.subcommand(sub_cmd_name="gui", sub_cmd_description="Interact via buttons with the todo list")
     async def todo_gui(self, ctx: SlashContext) -> None:
         """Interact via buttons with the todo list."""
         components: list[ActionRow] = [

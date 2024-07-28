@@ -38,6 +38,8 @@ src = ["src"]
 select = ["ALL"]
 # Ignore some of the most obnoxious linting errors.
 ignore = [
+    # Missing trailing comma
+    "COM812",
     # Missing docstrings.
     "D100",
     "D104",
