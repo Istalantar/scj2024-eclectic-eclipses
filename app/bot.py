@@ -1,6 +1,8 @@
+import os
 import sys
 from pathlib import Path
 
+from dotenv import load_dotenv
 from interactions import (
     Client,
     Intents,
@@ -24,14 +26,12 @@ if __name__ == "__main__":
         print("No .env file for the token found")
         sys.exit(1)
 
-    token = ""
-    with Path.open(env_path) as f:
-        for line in f:
-            if line.startswith("TOKEN"):
-                token = line.split("=")[1].strip()
+    load_dotenv()
+    token = os.getenv("TOKEN")
 
     bot.load_extension("features.todo_list")
     bot.load_extension("features.database")
+    bot.load_extension("features.dictionary")
     bot.load_extension("features.reminder")
     bot.load_extension("features.calculator")
     bot.start(token)
