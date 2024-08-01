@@ -43,7 +43,7 @@ Below are instructions to install this project.
 
 To develop this project on your local machine, follow the steps outlined below.
 
-> **Note**: Ensure you have Python version 3.11 installed. If not, download it from [here](https://www.python.org/downloads/).
+> **Note**: Ensure you have Python version 3.12 installed. If not, download it from [here](https://www.python.org/downloads/).
 
 1. This project uses [Poetry](https://python-poetry.org/) as a dependency manager. Run the following command to install Poetry:
 
