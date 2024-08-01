@@ -61,7 +61,7 @@ git clone https://github.com/Istalantar/scj2024-eclectic-eclipses
 3. Navigate to the root of the repository and run the following command. Poetry will create a virtual environment and install all the necessary dependencies in it.
 
 ```bash
-poetry install
+poetry install --no-root
 ```
 
 4. Optionally, if you want to contribute to this project, install the pre-commit hook for your local repository by running the following command:
